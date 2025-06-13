@@ -1,0 +1,120 @@
+<!--campus.wxml-->
+<view class="page">
+  <view class="header">
+    <view class="title">校区管理</view>
+  </view>
+
+  <!-- 搜索和添加区域 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索校区" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddCampus">添加</button>
+  </view>
+
+  <!-- 校区列表 -->
+  <scroll-view class="campus-list" scroll-y>
+    <view wx:if="{{campusList.length === 0}}" class="empty-tip">暂无校区</view>
+    <view wx:for="{{campusList}}" wx:key="id" class="campus-item">
+      <view class="campus-info" bindtap="showCampusDetail" data-id="{{item.id}}">
+        <view class="campus-name">{{item.name}}</view>
+        <view class="campus-address">{{item.address}}</view>
+        <view class="campus-meta">
+          <text class="campus-phone">{{item.phone}}</text>
+          <text class="dot">·</text>
+          <text class="campus-manager">负责人: {{item.manager}}</text>
+        </view>
+      </view>
+      <view class="campus-actions">
+        <view class="action-btn edit" catchtap="editCampus" data-id="{{item.id}}">编辑</view>
+        <view class="action-btn delete" catchtap="deleteCampus" data-id="{{item.id}}">删除</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 添加/编辑校区弹窗 -->
+  <view class="modal {{showCampusModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCampusModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingCampus ? '编辑校区' : '添加校区'}}</text>
+        <view class="modal-close" bindtap="hideCampusModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">校区名称</text>
+          <input type="text" placeholder="请输入校区名称" value="{{campusForm.name}}" bindinput="onCampusFormInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="label">详细地址</text>
+          <input type="text" placeholder="请输入详细地址" value="{{campusForm.address}}" bindinput="onCampusFormInput" data-field="address" />
+        </view>
+        <view class="form-item">
+          <text class="label">联系电话</text>
+          <input type="text" placeholder="请输入联系电话" value="{{campusForm.phone}}" bindinput="onCampusFormInput" data-field="phone" />
+        </view>
+        <view class="form-item">
+          <text class="label">负责人</text>
+          <input type="text" placeholder="请输入负责人姓名" value="{{campusForm.manager}}" bindinput="onCampusFormInput" data-field="manager" />
+        </view>
+        <view class="form-item">
+          <text class="label">备注</text>
+          <textarea placeholder="请输入备注信息" value="{{campusForm.remark}}" bindinput="onCampusFormInput" data-field="remark" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCampusModal">取消</button>
+        <button class="btn confirm" bindtap="saveCampus">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 校区详情弹窗 -->
+  <view class="modal {{showDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>校区详情</text>
+        <view class="modal-close" bindtap="hideDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">校区名称</text>
+          <text class="value">{{currentCampus.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">详细地址</text>
+          <text class="value">{{currentCampus.address}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">联系电话</text>
+          <text class="value">{{currentCampus.phone}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">负责人</text>
+          <text class="value">{{currentCampus.manager}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">学员数量</text>
+          <text class="value">{{currentCampus.studentCount || 0}}人</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">教练数量</text>
+          <text class="value">{{currentCampus.coachCount || 0}}人</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程数量</text>
+          <text class="value">{{currentCampus.courseCount || 0}}个</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">备注</text>
+          <text class="value">{{currentCampus.remark || '无'}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view> 

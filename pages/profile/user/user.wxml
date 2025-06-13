@@ -1,0 +1,148 @@
+<!--user.wxml-->
+<view class="page">
+  <view class="header">
+    <view class="title">用户管理</view>
+  </view>
+
+  <!-- 搜索和添加区域 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索用户" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddUser">添加</button>
+  </view>
+
+  <!-- 用户列表 -->
+  <scroll-view class="user-list" scroll-y>
+    <view wx:if="{{userList.length === 0}}" class="empty-tip">暂无用户</view>
+    <view wx:for="{{userList}}" wx:key="id" class="user-item">
+      <view class="user-info" bindtap="showUserDetail" data-id="{{item.id}}">
+        <image class="user-avatar" src="{{item.avatar || '/images/default-avatar.png'}}"></image>
+        <view class="user-detail">
+          <view class="user-name">{{item.name}} <text class="user-role">({{item.role}})</text></view>
+          <view class="user-meta">
+            <text>{{item.phone}}</text>
+            <text class="dot">·</text>
+            <text>{{item.campus}}</text>
+          </view>
+          <view class="user-status">
+            <text class="status-tag {{item.status === 'active' ? 'active' : 'inactive'}}">{{item.status === 'active' ? '正常' : '禁用'}}</text>
+            <text class="last-login">最近登录: {{item.lastLogin || '从未登录'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="user-actions">
+        <view class="action-btn edit" catchtap="editUser" data-id="{{item.id}}">编辑</view>
+        <view class="action-btn delete" catchtap="deleteUser" data-id="{{item.id}}">删除</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 添加/编辑用户弹窗 -->
+  <view class="modal {{showUserModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideUserModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingUser ? '编辑用户' : '添加用户'}}</text>
+        <view class="modal-close" bindtap="hideUserModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">用户名</text>
+          <input type="text" placeholder="请输入用户名" value="{{userForm.name}}" bindinput="onUserFormInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="label">角色</text>
+          <picker mode="selector" range="{{roleOptions}}" value="{{userForm.roleIndex}}" bindchange="onRoleChange">
+            <view class="picker">
+              {{userForm.role || '请选择角色'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">联系电话</text>
+          <input type="text" placeholder="请输入联系电话" value="{{userForm.phone}}" bindinput="onUserFormInput" data-field="phone" />
+        </view>
+        <view class="form-item">
+          <text class="label">所属校区</text>
+          <picker mode="selector" range="{{campusList}}" range-key="name" value="{{userForm.campusIndex}}" bindchange="onCampusChange">
+            <view class="picker">
+              {{userForm.campus || '请选择所属校区'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">账号状态</text>
+          <picker mode="selector" range="{{['正常', '禁用']}}" value="{{userForm.statusIndex}}" bindchange="onStatusChange">
+            <view class="picker">
+              {{userForm.status === 'active' ? '正常' : (userForm.status === 'inactive' ? '禁用' : '请选择状态')}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item" wx:if="{{!editingUser}}">
+          <text class="label">初始密码</text>
+          <input type="password" placeholder="请输入初始密码" value="{{userForm.password}}" bindinput="onUserFormInput" data-field="password" />
+        </view>
+        <view class="form-item">
+          <text class="label">备注</text>
+          <textarea placeholder="请输入备注" value="{{userForm.remark}}" bindinput="onUserFormInput" data-field="remark" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideUserModal">取消</button>
+        <button class="btn confirm" bindtap="saveUser">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 用户详情弹窗 -->
+  <view class="modal {{showDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>用户详情</text>
+        <view class="modal-close" bindtap="hideDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">用户名</text>
+          <text class="value">{{currentUser.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">角色</text>
+          <text class="value">{{currentUser.role}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">联系电话</text>
+          <text class="value">{{currentUser.phone}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">所属校区</text>
+          <text class="value">{{currentUser.campus}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">账号状态</text>
+          <text class="value">{{currentUser.status === 'active' ? '正常' : '禁用'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">创建时间</text>
+          <text class="value">{{currentUser.createTime || '未知'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">最近登录</text>
+          <text class="value">{{currentUser.lastLogin || '从未登录'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">备注</text>
+          <text class="value">{{currentUser.remark || '无'}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+        <button wx:if="{{currentUser.status === 'active'}}" class="btn danger" catchtap="toggleUserStatus" data-id="{{currentUser.id}}">禁用账号</button>
+        <button wx:else class="btn primary" catchtap="toggleUserStatus" data-id="{{currentUser.id}}">启用账号</button>
+      </view>
+    </view>
+  </view>
+</view> 

@@ -1,0 +1,266 @@
+<!--finance.wxml-->
+<view class="page">
+  <!-- 顶部标签页 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'payment' ? 'active' : ''}}" bindtap="switchTab" data-tab="payment">缴费记录</view>
+    <view class="tab {{activeTab === 'finance' ? 'active' : ''}}" bindtap="switchTab" data-tab="finance">收支管理</view>
+  </view>
+
+  <!-- 缴费记录标签页 -->
+  <view class="tab-content" hidden="{{activeTab !== 'payment'}}">
+    <!-- 搜索区域 -->
+    <view class="search-container">
+      <view class="search-box">
+        <input type="text" placeholder="搜索学员/课程" bindinput="onPaymentSearch" value="{{paymentSearchKey}}" />
+        <view class="search-icon">🔍</view>
+      </view>
+    </view>
+
+    <!-- 筛选条件 -->
+    <view class="filter-bar">
+      <picker mode="date" fields="month" value="{{paymentMonth}}" bindchange="onPaymentMonthChange">
+        <view class="filter-item">
+          <text>{{paymentMonth || '选择月份'}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{paymentTypeOptions}}" value="{{paymentTypeIndex}}" bindchange="onPaymentTypeChange">
+        <view class="filter-item">
+          <text>{{paymentTypeOptions[paymentTypeIndex]}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 缴费记录列表 -->
+    <scroll-view class="payment-list" scroll-y>
+      <view wx:if="{{paymentList.length === 0}}" class="empty-tip">暂无缴费记录</view>
+      <view wx:for="{{paymentList}}" wx:key="id" class="payment-item" bindtap="showPaymentDetail" data-id="{{item.id}}">
+        <view class="payment-info">
+          <view class="payment-header">
+            <view class="payment-student">{{item.studentName}}</view>
+            <view class="payment-amount">¥{{item.amount}}</view>
+          </view>
+          <view class="payment-course">{{item.courseName}} ({{item.courseType}})</view>
+          <view class="payment-meta">
+            <text class="payment-date">{{item.date}}</text>
+            <text class="dot">·</text>
+            <text class="payment-hours">增加{{item.hours}}课时</text>
+            <text class="dot">·</text>
+            <text class="payment-type">{{item.paymentType}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 收支管理标签页 -->
+  <view class="tab-content" hidden="{{activeTab !== 'finance'}}">
+    <!-- 搜索和添加区域 -->
+    <view class="search-add-container">
+      <view class="search-box">
+        <input type="text" placeholder="搜索项目" bindinput="onFinanceSearch" value="{{financeSearchKey}}" />
+        <view class="search-icon">🔍</view>
+      </view>
+      <button class="add-btn" bindtap="showAddFinance">添加</button>
+    </view>
+
+    <!-- 筛选条件 -->
+    <view class="filter-bar">
+      <picker mode="date" fields="month" value="{{financeMonth}}" bindchange="onFinanceMonthChange">
+        <view class="filter-item">
+          <text>{{financeMonth || '选择月份'}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{['全部', '收入', '支出']}}" value="{{financeTypeIndex}}" bindchange="onFinanceTypeChange">
+        <view class="filter-item">
+          <text>{{['全部', '收入', '支出'][financeTypeIndex]}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 收支统计 -->
+    <view class="finance-summary">
+      <view class="summary-item income">
+        <view class="summary-label">本月收入</view>
+        <view class="summary-value">¥{{monthlyIncome}}</view>
+      </view>
+      <view class="summary-item expense">
+        <view class="summary-label">本月支出</view>
+        <view class="summary-value">¥{{monthlyExpense}}</view>
+      </view>
+      <view class="summary-item balance">
+        <view class="summary-label">本月结余</view>
+        <view class="summary-value">¥{{monthlyBalance}}</view>
+      </view>
+    </view>
+
+    <!-- 收支记录列表 -->
+    <scroll-view class="finance-list" scroll-y>
+      <view wx:if="{{financeList.length === 0}}" class="empty-tip">暂无收支记录</view>
+      <view wx:for="{{financeList}}" wx:key="id" class="finance-item">
+        <view class="finance-info" bindtap="showFinanceDetail" data-id="{{item.id}}">
+          <view class="finance-header">
+            <view class="finance-project">{{item.project}}</view>
+            <view class="finance-amount {{item.type === 'income' ? 'income' : 'expense'}}">
+              {{item.type === 'income' ? '+' : '-'}}¥{{item.amount}}
+            </view>
+          </view>
+          <view class="finance-meta">
+            <text class="finance-date">{{item.date}}</text>
+            <text class="dot">·</text>
+            <text class="finance-category">{{item.category}}</text>
+          </view>
+          <view class="finance-remark" wx:if="{{item.remark}}">备注: {{item.remark}}</view>
+        </view>
+        <view class="finance-actions">
+          <view class="action-btn edit" catchtap="editFinance" data-id="{{item.id}}">编辑</view>
+          <view class="action-btn delete" catchtap="deleteFinance" data-id="{{item.id}}">删除</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 缴费详情弹窗 -->
+  <view class="modal {{showPaymentDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hidePaymentDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>缴费详情</text>
+        <view class="modal-close" bindtap="hidePaymentDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">学员姓名</text>
+          <text class="value">{{currentPayment.studentName}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程名称</text>
+          <text class="value">{{currentPayment.courseName}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程类型</text>
+          <text class="value">{{currentPayment.courseType}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">缴费金额</text>
+          <text class="value">¥{{currentPayment.amount}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">增加课时</text>
+          <text class="value">{{currentPayment.hours}}课时</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">缴费类型</text>
+          <text class="value">{{currentPayment.paymentType}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">缴费日期</text>
+          <text class="value">{{currentPayment.date}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">经办人</text>
+          <text class="value">{{currentPayment.operator}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">备注</text>
+          <text class="value">{{currentPayment.remark || '无'}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hidePaymentDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加/编辑收支弹窗 -->
+  <view class="modal {{showFinanceModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideFinanceModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingFinance ? '编辑收支' : '添加收支'}}</text>
+        <view class="modal-close" bindtap="hideFinanceModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">类型</text>
+          <picker mode="selector" range="{{['收入', '支出']}}" value="{{financeForm.typeIndex}}" bindchange="onFinanceFormTypeChange">
+            <view class="picker">
+              {{financeForm.typeIndex === 0 ? '收入' : '支出'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">项目</text>
+          <input type="text" placeholder="请输入项目名称" value="{{financeForm.project}}" bindinput="onFinanceFormInput" data-field="project" />
+        </view>
+        <view class="form-item">
+          <text class="label">金额</text>
+          <input type="digit" placeholder="请输入金额" value="{{financeForm.amount}}" bindinput="onFinanceFormInput" data-field="amount" />
+        </view>
+        <view class="form-item">
+          <text class="label">收支类型</text>
+          <input type="text" placeholder="请输入收支类型" value="{{financeForm.category}}" bindinput="onFinanceFormInput" data-field="category" />
+        </view>
+        <view class="form-item">
+          <text class="label">日期</text>
+          <picker mode="date" value="{{financeForm.date}}" bindchange="onFinanceFormDateChange">
+            <view class="picker">
+              {{financeForm.date || '请选择日期'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">备注</text>
+          <textarea placeholder="请输入备注信息" value="{{financeForm.remark}}" bindinput="onFinanceFormInput" data-field="remark" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideFinanceModal">取消</button>
+        <button class="btn confirm" bindtap="saveFinance">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收支详情弹窗 -->
+  <view class="modal {{showFinanceDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideFinanceDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>收支详情</text>
+        <view class="modal-close" bindtap="hideFinanceDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">类型</text>
+          <text class="value">{{currentFinance.type === 'income' ? '收入' : '支出'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">项目</text>
+          <text class="value">{{currentFinance.project}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">金额</text>
+          <text class="value">¥{{currentFinance.amount}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">收支类型</text>
+          <text class="value">{{currentFinance.category}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">日期</text>
+          <text class="value">{{currentFinance.date}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">备注</text>
+          <text class="value">{{currentFinance.remark || '无'}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideFinanceDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>

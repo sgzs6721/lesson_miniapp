@@ -1,0 +1,139 @@
+<!--coach.wxml-->
+<view class="page">
+  <view class="header">
+    <view class="title">教练管理</view>
+  </view>
+
+  <!-- 搜索和添加区域 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索教练" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddCoach">添加</button>
+  </view>
+
+  <!-- 教练列表 -->
+  <scroll-view class="coach-list" scroll-y>
+    <view wx:if="{{coachList.length === 0}}" class="empty-tip">暂无教练</view>
+    <view wx:for="{{coachList}}" wx:key="id" class="coach-item">
+      <view class="coach-info" bindtap="showCoachDetail" data-id="{{item.id}}">
+        <image class="coach-avatar" src="{{item.avatar || '/images/default-avatar.png'}}"></image>
+        <view class="coach-detail">
+          <view class="coach-name">{{item.name}} <text class="coach-gender">{{item.gender === 'male' ? '男' : '女'}}</text></view>
+          <view class="coach-meta">
+            <text>{{item.phone}}</text>
+            <text class="dot">·</text>
+            <text>{{item.campus}}</text>
+          </view>
+          <view class="coach-courses">
+            <text>{{item.courseCount}}门课程</text>
+            <text class="dot">·</text>
+            <text>{{item.studentCount}}名学员</text>
+          </view>
+        </view>
+      </view>
+      <view class="coach-actions">
+        <view class="action-btn edit" catchtap="editCoach" data-id="{{item.id}}">编辑</view>
+        <view class="action-btn delete" catchtap="deleteCoach" data-id="{{item.id}}">删除</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 添加/编辑教练弹窗 -->
+  <view class="modal {{showCoachModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCoachModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingCoach ? '编辑教练' : '添加教练'}}</text>
+        <view class="modal-close" bindtap="hideCoachModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">姓名</text>
+          <input type="text" placeholder="请输入教练姓名" value="{{coachForm.name}}" bindinput="onCoachFormInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="label">性别</text>
+          <picker mode="selector" range="{{['男', '女']}}" value="{{coachForm.genderIndex}}" bindchange="onGenderChange">
+            <view class="picker">
+              {{coachForm.gender === 'male' ? '男' : (coachForm.gender === 'female' ? '女' : '请选择性别')}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">联系电话</text>
+          <input type="text" placeholder="请输入联系电话" value="{{coachForm.phone}}" bindinput="onCoachFormInput" data-field="phone" />
+        </view>
+        <view class="form-item">
+          <text class="label">所属校区</text>
+          <picker mode="selector" range="{{campusList}}" range-key="name" value="{{coachForm.campusIndex}}" bindchange="onCampusChange">
+            <view class="picker">
+              {{coachForm.campus || '请选择所属校区'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">教学科目</text>
+          <input type="text" placeholder="请输入教学科目" value="{{coachForm.subjects}}" bindinput="onCoachFormInput" data-field="subjects" />
+        </view>
+        <view class="form-item">
+          <text class="label">简介</text>
+          <textarea placeholder="请输入简介" value="{{coachForm.intro}}" bindinput="onCoachFormInput" data-field="intro" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCoachModal">取消</button>
+        <button class="btn confirm" bindtap="saveCoach">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 教练详情弹窗 -->
+  <view class="modal {{showDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>教练详情</text>
+        <view class="modal-close" bindtap="hideDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">姓名</text>
+          <text class="value">{{currentCoach.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">性别</text>
+          <text class="value">{{currentCoach.gender === 'male' ? '男' : '女'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">联系电话</text>
+          <text class="value">{{currentCoach.phone}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">所属校区</text>
+          <text class="value">{{currentCoach.campus}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">教学科目</text>
+          <text class="value">{{currentCoach.subjects}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程数量</text>
+          <text class="value">{{currentCoach.courseCount}}门</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">学员数量</text>
+          <text class="value">{{currentCoach.studentCount}}人</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">简介</text>
+          <text class="value">{{currentCoach.intro || '无'}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view> 

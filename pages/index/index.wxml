@@ -1,0 +1,131 @@
+<!--index.wxml-->
+<view class="page">
+  <!-- 校区选择器 -->
+  <view class="campus-selector">
+    <view class="campus-name" bindtap="showCampusSelector">
+      <text>{{currentCampus.name}}</text>
+      <view class="arrow"></view>
+    </view>
+  </view>
+
+  <!-- 校区选择弹窗 -->
+  <view class="campus-popup {{showCampusSelector ? 'show' : ''}}">
+    <view class="campus-popup-mask" bindtap="hideCampusSelector"></view>
+    <view class="campus-popup-content">
+      <view class="campus-popup-header">
+        <text>选择校区</text>
+        <view class="campus-popup-close" bindtap="hideCampusSelector">×</view>
+      </view>
+      <scroll-view scroll-y class="campus-list">
+        <view 
+          wx:for="{{campusList}}" 
+          wx:key="id" 
+          class="campus-item {{item.id === currentCampus.id ? 'active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="selectCampus"
+        >
+          <text>{{item.name}}</text>
+          <view wx:if="{{item.id === currentCampus.id}}" class="campus-selected-icon">✓</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 首页内容 -->
+  <scroll-view class="scrollarea" scroll-y type="list" enhanced show-scrollbar="{{false}}">
+    <!-- 数据概览 -->
+    <view class="data-overview">
+      <view class="overview-grid">
+        <view class="overview-item">
+          <view class="overview-value">{{stats.teacherCount}}</view>
+          <view class="overview-label">上课老师</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">{{stats.classCount}}</view>
+          <view class="overview-label">上课班级</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">{{stats.studentCount}}</view>
+          <view class="overview-label">上课学员</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">{{stats.checkinCount}}</view>
+          <view class="overview-label">打卡次数</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">{{stats.consumedHours}}</view>
+          <view class="overview-label">消耗课时</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">{{stats.leaveCount}}</view>
+          <view class="overview-label">请假人数</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">¥{{stats.teacherSalary}}</view>
+          <view class="overview-label">老师课酬</view>
+        </view>
+        <view class="overview-item">
+          <view class="overview-value">¥{{stats.consumedFees}}</view>
+          <view class="overview-label">消耗费用</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 今日课表 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">今日课表</text>
+        <text class="section-more" bindtap="navigateToSchedule">查看全部</text>
+      </view>
+      <view class="schedule-list">
+        <view wx:if="{{scheduleList.length === 0}}" class="empty-tip">今日暂无课程</view>
+        <view wx:for="{{scheduleList}}" wx:key="id" class="schedule-item">
+          <view class="schedule-time">{{item.startTime}}-{{item.endTime}}</view>
+          <view class="schedule-info">
+            <view class="schedule-course">{{item.courseName}}</view>
+            <view class="schedule-detail">
+              <text>{{item.teacherName}}</text>
+              <text class="dot">·</text>
+              <text>{{item.roomName}}</text>
+              <text class="dot">·</text>
+              <text>{{item.studentCount}}人</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 今日上课学员 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">今日上课学员</text>
+        <text class="section-more" bindtap="navigateToStudents">查看全部</text>
+      </view>
+      <view class="student-list">
+        <view wx:if="{{todayStudents.length === 0}}" class="empty-tip">今日暂无上课学员</view>
+        <view wx:for="{{todayStudents}}" wx:key="id" class="student-item">
+          <image class="student-avatar" src="{{item.avatarUrl || defaultAvatarUrl}}" mode="aspectFill"></image>
+          <view class="student-info">
+            <view class="student-name">{{item.name}}</view>
+            <view class="student-detail">
+              <text>{{item.className}}</text>
+              <text class="dot">·</text>
+              <text>{{item.checkinTime || '未打卡'}}</text>
+            </view>
+          </view>
+          <view class="student-status {{item.status}}">{{item.statusText}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷功能 -->
+    <view class="quick-actions-wrapper">
+      <view class="quick-actions">
+        <view class="quick-action-item" wx:for="{{quickActions}}" wx:key="id" bindtap="handleQuickAction" data-id="{{item.id}}">
+          <view class="quick-action-icon {{item.icon}}"></view>
+          <view class="quick-action-name">{{item.name}}</view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

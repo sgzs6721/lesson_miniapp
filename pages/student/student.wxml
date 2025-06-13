@@ -1,0 +1,181 @@
+<!--student.wxml-->
+<view class="page">
+  <!-- 顶部标签页 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'info' ? 'active' : ''}}" bindtap="switchTab" data-tab="info">学员信息</view>
+    <view class="tab {{activeTab === 'attendance' ? 'active' : ''}}" bindtap="switchTab" data-tab="attendance">出勤记录</view>
+  </view>
+
+  <!-- 学员信息标签页 -->
+  <view class="tab-content" hidden="{{activeTab !== 'info'}}">
+    <!-- 搜索和添加学员 -->
+    <view class="search-add-container">
+      <view class="search-box">
+        <input type="text" placeholder="搜索学员" bindinput="onSearch" value="{{searchKey}}" />
+        <view class="search-icon">🔍</view>
+      </view>
+      <button class="add-btn" bindtap="showAddStudent">添加</button>
+    </view>
+
+    <!-- 学员列表 -->
+    <scroll-view class="student-list" scroll-y>
+      <view wx:if="{{studentList.length === 0}}" class="empty-tip">暂无学员</view>
+      <view wx:for="{{studentList}}" wx:key="id" class="student-item">
+        <view class="student-info" bindtap="showStudentDetail" data-id="{{item.id}}">
+          <image class="student-avatar" src="{{item.avatar || '/images/default-avatar.png'}}"></image>
+          <view class="student-detail">
+            <view class="student-name">{{item.name}} <text class="student-gender">{{item.gender === 'male' ? '男' : '女'}}</text></view>
+            <view class="student-meta">
+              <text>{{item.age}}岁</text>
+              <text class="dot">·</text>
+              <text>{{item.phone}}</text>
+            </view>
+            <view class="student-courses">
+              <text>{{item.courseCount}}门课程</text>
+              <text class="dot">·</text>
+              <text>{{item.attendanceRate}}出勤率</text>
+            </view>
+          </view>
+        </view>
+        <view class="student-actions">
+          <view class="action-btn edit" bindtap="editStudent" data-id="{{item.id}}">编辑</view>
+          <view class="action-btn delete" bindtap="deleteStudent" data-id="{{item.id}}">删除</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 出勤记录标签页 -->
+  <view class="tab-content" hidden="{{activeTab !== 'attendance'}}">
+    <!-- 筛选条件 -->
+    <view class="filter-bar">
+      <picker mode="date" fields="month" value="{{currentMonth}}" bindchange="onMonthChange">
+        <view class="filter-item">
+          <text>{{currentMonth || '选择月份'}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{courseList}}" range-key="name" value="{{courseIndex}}" bindchange="onCourseChange">
+        <view class="filter-item">
+          <text>{{selectedCourse ? selectedCourse.name : '选择课程'}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{['全部', '已到', '未到', '请假']}}" value="{{statusIndex}}" bindchange="onStatusChange">
+        <view class="filter-item">
+          <text>{{statusOptions[statusIndex]}}</text>
+          <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 出勤记录列表 -->
+    <scroll-view class="attendance-list" scroll-y>
+      <view wx:if="{{attendanceList.length === 0}}" class="empty-tip">暂无出勤记录</view>
+      <view wx:for="{{attendanceList}}" wx:key="id" class="attendance-item">
+        <view class="attendance-date">{{item.date}}</view>
+        <view class="attendance-info">
+          <view class="attendance-course">{{item.courseName}}</view>
+          <view class="attendance-student">{{item.studentName}}</view>
+          <view class="attendance-time">{{item.time}}</view>
+        </view>
+        <view class="attendance-status {{item.status}}">
+          <text>{{item.status === 'checked' ? '已到' : (item.status === 'absent' ? '未到' : '请假')}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 添加/编辑学员弹窗 -->
+  <view class="modal {{showStudentModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideStudentModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingStudent ? '编辑学员' : '添加学员'}}</text>
+        <view class="modal-close" bindtap="hideStudentModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">姓名</text>
+          <input type="text" placeholder="请输入学员姓名" value="{{studentForm.name}}" bindinput="onStudentFormInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="label">性别</text>
+          <picker mode="selector" range="{{['男', '女']}}" value="{{studentForm.genderIndex}}" bindchange="onGenderChange">
+            <view class="picker">
+              {{studentForm.gender === 'male' ? '男' : (studentForm.gender === 'female' ? '女' : '请选择性别')}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">年龄</text>
+          <input type="number" placeholder="请输入年龄" value="{{studentForm.age}}" bindinput="onStudentFormInput" data-field="age" />
+        </view>
+        <view class="form-item">
+          <text class="label">联系电话</text>
+          <input type="number" placeholder="请输入联系电话" value="{{studentForm.phone}}" bindinput="onStudentFormInput" data-field="phone" />
+        </view>
+        <view class="form-item">
+          <text class="label">家长姓名</text>
+          <input type="text" placeholder="请输入家长姓名" value="{{studentForm.parentName}}" bindinput="onStudentFormInput" data-field="parentName" />
+        </view>
+        <view class="form-item">
+          <text class="label">备注</text>
+          <textarea placeholder="请输入备注信息" value="{{studentForm.remark}}" bindinput="onStudentFormInput" data-field="remark" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideStudentModal">取消</button>
+        <button class="btn confirm" bindtap="saveStudent">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学员详情弹窗 -->
+  <view class="modal {{showDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>学员详情</text>
+        <view class="modal-close" bindtap="hideDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">姓名</text>
+          <text class="value">{{currentStudent.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">性别</text>
+          <text class="value">{{currentStudent.gender === 'male' ? '男' : '女'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">年龄</text>
+          <text class="value">{{currentStudent.age}}岁</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">联系电话</text>
+          <text class="value">{{currentStudent.phone}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">家长姓名</text>
+          <text class="value">{{currentStudent.parentName}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">报名课程</text>
+          <text class="value">{{currentStudent.courses}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">出勤率</text>
+          <text class="value">{{currentStudent.attendanceRate}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">备注</text>
+          <text class="value">{{currentStudent.remark}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>

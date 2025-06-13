@@ -1,0 +1,195 @@
+<!--course.wxml-->
+<view class="page">
+
+  <!-- 搜索和添加课程同一行，使用直角设计 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索课程" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddCourse">添加</button>
+  </view>
+
+  <!-- 顶部标签页 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'course' ? 'active' : ''}}" bindtap="switchTab" data-tab="course">课程列表</view>
+    <view class="tab {{activeTab === 'schedule' ? 'active' : ''}}" bindtap="switchTab" data-tab="schedule">本周课表</view>
+  </view>
+
+  <!-- 课程列表 -->
+  <view class="tab-content" hidden="{{activeTab !== 'course'}}">
+    <scroll-view class="course-list" scroll-y>
+      <view wx:if="{{courseList.length === 0}}" class="empty-tip">暂无课程</view>
+      <view wx:for="{{courseList}}" wx:key="id" class="course-item">
+        <view class="course-info" bindtap="showCourseDetail" data-id="{{item.id}}">
+          <view class="course-name">{{item.name}}</view>
+          <view class="course-detail">
+            <text>{{item.teacherName}}</text>
+            <text class="dot">·</text>
+            <text>{{item.studentCount}}人</text>
+            <text class="dot">·</text>
+            <text>{{item.duration}}分钟</text>
+          </view>
+          <view class="course-tags">
+            <text class="tag" wx:if="{{item.type}}">{{item.type}}</text>
+            <text class="tag" wx:if="{{item.level}}">{{item.level}}</text>
+          </view>
+        </view>
+        <view class="course-actions">
+          <view class="action-btn edit" bindtap="editCourse" data-id="{{item.id}}">编辑</view>
+          <view class="action-btn delete" bindtap="deleteCourse" data-id="{{item.id}}">删除</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 本周课表 -->
+  <view class="tab-content" hidden="{{activeTab !== 'schedule'}}">
+    <!-- 周选择器 -->
+    <view class="week-selector">
+      <view class="week-nav" bindtap="prevWeek">
+        <text class="arrow">←</text>
+      </view>
+      <view class="current-week">{{weekRange}}</view>
+      <view class="week-nav" bindtap="nextWeek">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 课表 -->
+    <scroll-view class="schedule-container" scroll-y>
+      <view class="schedule-grid">
+        <!-- 时间列 -->
+        <view class="time-column">
+          <view class="time-header"></view>
+          <view wx:for="{{timeSlots}}" wx:key="index" class="time-slot">
+            {{item}}
+          </view>
+        </view>
+
+        <!-- 每天的课程 -->
+        <view wx:for="{{weekDays}}" wx:key="day" wx:for-item="day" class="day-column">
+          <view class="day-header">{{day.name}}</view>
+          <view class="day-slots">
+            <view wx:for="{{timeSlots}}" wx:key="index" class="time-slot">
+              <view 
+                wx:for="{{day.courses}}" 
+                wx:key="id" 
+                wx:for-item="course"
+                class="course-block {{course.timeSlot === item ? 'show' : ''}}"
+                style="height: {{course.duration / 30 * 100}}rpx;"
+                bindtap="showScheduleDetail"
+                data-id="{{course.id}}"
+              >
+                <view class="course-name">{{course.name}}</view>
+                <view class="course-teacher">{{course.teacherName}}</view>
+                <view class="course-room">{{course.roomName}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 添加/编辑课程弹窗 -->
+  <view class="modal {{showCourseModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCourseModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>{{editingCourse ? '编辑课程' : '添加课程'}}</text>
+        <view class="modal-close" bindtap="hideCourseModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="label">课程名称</text>
+          <input type="text" placeholder="请输入课程名称" value="{{courseForm.name}}" bindinput="onCourseFormInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="label">授课老师</text>
+          <picker mode="selector" range="{{teacherList}}" range-key="name" value="{{courseForm.teacherIndex}}" bindchange="onTeacherChange">
+            <view class="picker">
+              {{courseForm.teacherName || '请选择授课老师'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">课程类型</text>
+          <picker mode="selector" range="{{courseTypes}}" value="{{courseForm.typeIndex}}" bindchange="onTypeChange">
+            <view class="picker">
+              {{courseForm.type || '请选择课程类型'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">课程级别</text>
+          <picker mode="selector" range="{{courseLevels}}" value="{{courseForm.levelIndex}}" bindchange="onLevelChange">
+            <view class="picker">
+              {{courseForm.level || '请选择课程级别'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-item">
+          <text class="label">课程时长</text>
+          <input type="number" placeholder="请输入课程时长（分钟）" value="{{courseForm.duration}}" bindinput="onCourseFormInput" data-field="duration" />
+        </view>
+        <view class="form-item">
+          <text class="label">最大人数</text>
+          <input type="number" placeholder="请输入最大人数" value="{{courseForm.maxStudents}}" bindinput="onCourseFormInput" data-field="maxStudents" />
+        </view>
+        <view class="form-item">
+          <text class="label">课程说明</text>
+          <textarea placeholder="请输入课程说明" value="{{courseForm.description}}" bindinput="onCourseFormInput" data-field="description" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCourseModal">取消</button>
+        <button class="btn confirm" bindtap="saveCourse">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程详情弹窗 -->
+  <view class="modal {{showDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>课程详情</text>
+        <view class="modal-close" bindtap="hideDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="detail-item">
+          <text class="label">课程名称</text>
+          <text class="value">{{currentCourse.name}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">授课老师</text>
+          <text class="value">{{currentCourse.teacherName}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程类型</text>
+          <text class="value">{{currentCourse.type}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程级别</text>
+          <text class="value">{{currentCourse.level}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程时长</text>
+          <text class="value">{{currentCourse.duration}}分钟</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">当前人数</text>
+          <text class="value">{{currentCourse.studentCount}}/{{currentCourse.maxStudents}}人</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程说明</text>
+          <text class="value">{{currentCourse.description}}</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>
