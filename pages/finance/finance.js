@@ -38,10 +38,10 @@ Page({
   },
   
   onShow() {
-    // 设置底部导航选中项
+    // 更新TabBar选中状态
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({
-        selected: 3
+        selected: 3 // 财务页是第四个标签，索引为3
       });
     }
     

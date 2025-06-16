@@ -37,10 +37,10 @@ Page({
   },
   
   onShow() {
-    // 设置底部导航选中项
+    // 更新TabBar选中状态
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({
-        selected: 2
+        selected: 2 // 学员页是第三个标签，索引为2
       });
     }
     

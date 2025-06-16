@@ -11,16 +11,16 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#fff",
+    "navigationBarBackgroundColor": "#4A6FFF",
     "navigationBarTitleText": "培训机构管理系统",
-    "navigationBarTextStyle": "black"
+    "navigationBarTextStyle": "white"
   },
   "tabBar": {
     "custom": true,
     "color": "#999999",
-    "selectedColor": "#3cc51f",
+    "selectedColor": "#4A6FFF",
     "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",

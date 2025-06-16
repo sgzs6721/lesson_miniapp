@@ -36,6 +36,15 @@ Page({
     this.initWeekDays()
   },
 
+  onShow() {
+    // 更新TabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({
+        selected: 1 // 课程页是第二个标签，索引为1
+      });
+    }
+  },
+
   // 初始化时间槽
   initTimeSlots() {
     const slots = []

@@ -6,6 +6,7 @@
       <text>{{currentCampus.name}}</text>
       <view class="arrow"></view>
     </view>
+    <view class="date-display">{{currentDate}}</view>
   </view>
 
   <!-- 校区选择弹窗 -->
@@ -35,6 +36,9 @@
   <scroll-view class="scrollarea" scroll-y type="list" enhanced show-scrollbar="{{false}}">
     <!-- 数据概览 -->
     <view class="data-overview">
+      <view class="overview-header">
+        <text class="overview-title">今日数据</text>
+      </view>
       <view class="overview-grid">
         <view class="overview-item">
           <view class="overview-value">{{stats.teacherCount}}</view>
@@ -78,7 +82,10 @@
         <text class="section-more" bindtap="navigateToSchedule">查看全部</text>
       </view>
       <view class="schedule-list">
-        <view wx:if="{{scheduleList.length === 0}}" class="empty-tip">今日暂无课程</view>
+        <view wx:if="{{scheduleList.length === 0}}" class="empty-tip">
+          <view class="empty-icon">📅</view>
+          <view>今日暂无课程</view>
+        </view>
         <view wx:for="{{scheduleList}}" wx:key="id" class="schedule-item">
           <view class="schedule-time">{{item.startTime}}-{{item.endTime}}</view>
           <view class="schedule-info">
@@ -91,6 +98,7 @@
               <text>{{item.studentCount}}人</text>
             </view>
           </view>
+          <view class="schedule-status {{item.status}}">{{item.statusText || '进行中'}}</view>
         </view>
       </view>
     </view>
@@ -102,7 +110,10 @@
         <text class="section-more" bindtap="navigateToStudents">查看全部</text>
       </view>
       <view class="student-list">
-        <view wx:if="{{todayStudents.length === 0}}" class="empty-tip">今日暂无上课学员</view>
+        <view wx:if="{{todayStudents.length === 0}}" class="empty-tip">
+          <view class="empty-icon">👨‍🎓</view>
+          <view>今日暂无上课学员</view>
+        </view>
         <view wx:for="{{todayStudents}}" wx:key="id" class="student-item">
           <image class="student-avatar" src="{{item.avatarUrl || defaultAvatarUrl}}" mode="aspectFill"></image>
           <view class="student-info">
@@ -120,6 +131,9 @@
 
     <!-- 快捷功能 -->
     <view class="quick-actions-wrapper">
+      <view class="section-header" style="padding: 0 20rpx 20rpx;">
+        <text class="section-title">快捷功能</text>
+      </view>
       <view class="quick-actions">
         <view class="quick-action-item" wx:for="{{quickActions}}" wx:key="id" bindtap="handleQuickAction" data-id="{{item.id}}">
           <view class="quick-action-icon {{item.icon}}"></view>

@@ -1,7 +1,7 @@
 /**index.wxss**/
 page {
   height: 100vh;
-  background-color: #f7f7f7;
+  background-color: var(--background-color);
   --primary-color: #3cc51f;
   --tab-bar-height: 100rpx;
 }
@@ -15,9 +15,14 @@ page {
 
 /* 校区选择器 */
 .campus-selector {
-  background-color: #fff;
-  padding: 12rpx 30rpx;
-  border-bottom: 1rpx solid #eee;
+  background: var(--gradient-primary);
+  padding: 20rpx 30rpx;
+  border-bottom: none;
+  color: white;
+  box-shadow: 0 4rpx 20rpx rgba(74, 111, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .campus-name {
@@ -33,7 +38,12 @@ page {
   height: 0;
   border-left: 12rpx solid transparent;
   border-right: 12rpx solid transparent;
-  border-top: 12rpx solid #666;
+  border-top: 12rpx solid white;
+}
+
+.date-display {
+  font-size: 24rpx;
+  opacity: 0.8;
 }
 
 /* 校区选择弹窗 */
@@ -61,6 +71,7 @@ page {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
 }
 
 .campus-popup-content {
@@ -68,10 +79,11 @@ page {
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #fff;
-  border-radius: 20rpx 20rpx 0 0;
+  background-color: var(--card-background);
+  border-radius: 30rpx 30rpx 0 0;
   transform: translateY(100%);
   transition: transform 0.3s;
+  box-shadow: 0 -10rpx 30rpx var(--shadow-color);
 }
 
 .campus-popup.show .campus-popup-content {
@@ -83,12 +95,19 @@ page {
   justify-content: space-between;
   align-items: center;
   padding: 30rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid var(--border-color);
 }
 
 .campus-popup-close {
   font-size: 40rpx;
-  color: #999;
+  color: var(--text-light);
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--border-color);
 }
 
 .campus-list {
@@ -100,11 +119,12 @@ page {
   justify-content: space-between;
   align-items: center;
   padding: 30rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid var(--border-color);
 }
 
 .campus-item.active {
   color: var(--primary-color);
+  background-color: rgba(74, 111, 255, 0.05);
 }
 
 .campus-selected-icon {
@@ -150,11 +170,24 @@ page {
 
 /* 区块样式 */
 .section {
-  margin: 20rpx;
-  background-color: #fff;
-  border-radius: 12rpx;
-  padding: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  margin: 30rpx 20rpx;
+  background-color: var(--card-background);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 20rpx var(--shadow-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8rpx;
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 8rpx 0 0 8rpx;
 }
 
 .section-header {
@@ -166,30 +199,37 @@ page {
 
 .section-title {
   font-size: 32rpx;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-color);
+  padding-left: 10rpx;
 }
 
 .section-more {
   font-size: 24rpx;
-  color: #999;
+  color: var(--primary-color);
+  padding: 6rpx 20rpx;
+  border-radius: 30rpx;
+  background-color: rgba(74, 111, 255, 0.1);
 }
 
 /* 今日上课学员 */
 .student-list {
-  background: #fff;
-  padding: 0 20rpx;
+  background: transparent;
+  padding: 10rpx 0;
 }
 
 .student-item {
   display: flex;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #eee;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  background-color: #FBFCFF;
+  border-radius: 12rpx;
+  border: 1rpx solid var(--border-color);
 }
 
 .student-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .student-avatar {
@@ -197,6 +237,8 @@ page {
   height: 80rpx;
   border-radius: 50%;
   margin-right: 20rpx;
+  border: 3rpx solid white;
+  box-shadow: 0 2rpx 10rpx var(--shadow-color);
 }
 
 .student-info {
@@ -205,175 +247,142 @@ page {
 
 .student-name {
   font-size: 28rpx;
-  color: #333;
-  margin-bottom: 8rpx;
+  font-weight: 500;
+  margin-bottom: 6rpx;
 }
 
 .student-detail {
   font-size: 24rpx;
-  color: #666;
+  color: var(--text-light);
 }
 
 .student-status {
+  padding: 6rpx 20rpx;
+  border-radius: 30rpx;
   font-size: 24rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
+  font-weight: 500;
 }
 
-.student-status.checked {
-  color: #07c160;
-  background: rgba(7, 193, 96, 0.1);
+.student-status.present {
+  background-color: rgba(107, 203, 119, 0.1);
+  color: var(--accent-color);
 }
 
-.student-status.pending {
-  color: #ff9900;
-  background: rgba(255, 153, 0, 0.1);
+.student-status.absent {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: var(--danger-color);
 }
 
 .student-status.leave {
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
+  background-color: rgba(255, 209, 102, 0.1);
+  color: var(--warning-color);
 }
 
 /* 数据概览 */
 .data-overview {
-  background: #fff;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: var(--card-background);
+  box-shadow: 0 4rpx 20rpx var(--shadow-color);
 }
 
 .overview-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20rpx;
+  grid-gap: 2rpx;
+  background-color: var(--border-color);
 }
 
 .overview-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
+  background-color: var(--card-background);
+  padding: 20rpx 10rpx;
+  text-align: center;
 }
 
 .overview-value {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333;
+  color: var(--primary-color);
   margin-bottom: 8rpx;
 }
 
 .overview-label {
   font-size: 24rpx;
-  color: #666;
-}
-
-/* 今日上课学员 */
-.student-list {
-  background: #fff;
-  padding: 0 20rpx;
-}
-
-.student-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #eee;
-}
-
-.student-item:last-child {
-  border-bottom: none;
-}
-
-.student-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  margin-right: 20rpx;
-}
-
-.student-info {
-  flex: 1;
-}
-
-.student-name {
-  font-size: 28rpx;
-  color: #333;
-  margin-bottom: 8rpx;
-}
-
-.student-detail {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.student-status {
-  font-size: 24rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
-}
-
-.student-status.checked {
-  color: #07c160;
-  background: rgba(7, 193, 96, 0.1);
-}
-
-.student-status.pending {
-  color: #ff9900;
-  background: rgba(255, 153, 0, 0.1);
-}
-
-.student-status.leave {
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
+  color: var(--text-light);
 }
 
 /* 快捷功能 */
 .quick-actions-wrapper {
-  margin: 20rpx;
-  margin-bottom: calc(var(--tab-bar-height) + 20rpx);
+  margin: 30rpx 20rpx;
 }
 
 .quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 20rpx;
-  background-color: #fff;
-  border-radius: 12rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-gap: 20rpx;
 }
 
 .quick-action-item {
-  width: 25%;
+  background: var(--card-background);
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20rpx 0;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx var(--shadow-color);
+  transition: transform 0.3s;
+}
+
+.quick-action-item:active {
+  transform: scale(0.95);
 }
 
 .quick-action-icon {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background-color: #f0f9eb;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-bottom: 10rpx;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  font-size: 40rpx;
+  color: white;
+}
+
+.quick-action-icon.add-student {
+  background: linear-gradient(135deg, #4A6FFF, #6B8AFF);
+}
+
+.quick-action-icon.checkin {
+  background: linear-gradient(135deg, #6BCB77, #9BE9A8);
+}
+
+.quick-action-icon.payment {
+  background: linear-gradient(135deg, #FF6B6B, #FF9E9E);
+}
+
+.quick-action-icon.report {
+  background: linear-gradient(135deg, #4ECDC4, #7FDFD9);
 }
 
 .quick-action-name {
   font-size: 24rpx;
-  color: #666;
+  color: var(--text-secondary);
 }
 
-/* 空状态提示 */
+/* 空提示 */
 .empty-tip {
   text-align: center;
   padding: 40rpx 0;
-  color: #999;
+  color: var(--text-light);
   font-size: 28rpx;
+}
+
+.empty-icon {
+  font-size: 60rpx;
+  margin-bottom: 10rpx;
 }
 
 .userinfo {
@@ -430,23 +439,28 @@ page {
 
 /* 今日课表 */
 .schedule-list {
-  margin-top: 10rpx;
+  padding: 10rpx 0;
 }
 
 .schedule-item {
   display: flex;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
-}
-
-.schedule-item:last-child {
-  border-bottom: none;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+  background-color: #FBFCFF;
+  border-radius: 12rpx;
+  border: 1rpx solid var(--border-color);
 }
 
 .schedule-time {
   width: 160rpx;
   font-size: 24rpx;
-  color: #666;
+  color: var(--primary-color);
+  font-weight: 500;
+  background: rgba(74, 111, 255, 0.1);
+  padding: 10rpx 20rpx;
+  border-radius: 8rpx;
+  text-align: center;
+  margin-right: 20rpx;
 }
 
 .schedule-info {
@@ -456,15 +470,51 @@ page {
 .schedule-course {
   font-size: 28rpx;
   font-weight: 500;
-  color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .schedule-detail {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-light);
 }
 
 .dot {
-  margin: 0 6rpx;
+  margin: 0 10rpx;
+}
+
+/* 课表状态 */
+.schedule-status {
+  padding: 6rpx 20rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  align-self: flex-start;
+  margin-left: 20rpx;
+}
+
+.schedule-status.ongoing {
+  background-color: rgba(107, 203, 119, 0.1);
+  color: var(--accent-color);
+}
+
+.schedule-status.completed {
+  background-color: rgba(78, 205, 196, 0.1);
+  color: var(--info-color);
+}
+
+.schedule-status.upcoming {
+  background-color: rgba(255, 209, 102, 0.1);
+  color: var(--warning-color);
+}
+
+/* 数据概览 */
+.overview-header {
+  padding: 20rpx;
+  border-bottom: 1rpx solid var(--border-color);
+}
+
+.overview-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-color);
 }

@@ -75,11 +75,21 @@ Component({
     
     // 快捷功能
     quickActions: [
-      { id: 'addStudent', name: '添加学员', icon: 'icon-student' },
-      { id: 'attendance', name: '课程签到', icon: 'icon-attendance' },
-      { id: 'payment', name: '缴费登记', icon: 'icon-payment' },
-      { id: 'report', name: '数据报表', icon: 'icon-report' }
-    ]
+      { id: 'addStudent', name: '添加学员', icon: 'add-student' },
+      { id: 'checkin', name: '课程签到', icon: 'checkin' },
+      { id: 'payment', name: '缴费登记', icon: 'payment' },
+      { id: 'report', name: '数据报表', icon: 'report' }
+    ],
+    currentDate: '',
+  },
+  pageLifetimes: {
+    show: function() {
+      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().setData({
+          selected: 0
+        });
+      }
+    }
   },
   methods: {
     // 事件处理函数
@@ -232,6 +242,19 @@ Component({
     attached() {
       // 组件加载时获取初始数据
       this.loadCampusData(this.data.currentCampus.id);
+      this.setCurrentDate();
+    },
+    setCurrentDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const weekday = weekdays[now.getDay()];
+      
+      this.setData({
+        currentDate: `${year}年${month}月${day}日 ${weekday}`
+      });
     }
   },
 }) 

@@ -1,4 +1,30 @@
 /**app.wxss**/
+/* Modern Color Palette */
+page {
+  --primary-color: #4A6FFF;
+  --primary-light: #6B8AFF;
+  --primary-dark: #3A5AE5;
+  --secondary-color: #FF6B6B;
+  --accent-color: #6BCB77;
+  --warning-color: #FFD166;
+  --danger-color: #FF6B6B;
+  --info-color: #4ECDC4;
+  --text-color: #333333;
+  --text-secondary: #666666;
+  --text-light: #999999;
+  --background-color: #F8F9FC;
+  --card-background: #FFFFFF;
+  --border-color: #EEEEEE;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  --gradient-secondary: linear-gradient(135deg, var(--secondary-color), #FF9E9E);
+  --gradient-accent: linear-gradient(135deg, var(--accent-color), #9BE9A8);
+  
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
 .container {
   height: 100%;
   display: flex;
@@ -7,4 +33,62 @@
   justify-content: space-between;
   padding: 200rpx 0;
   box-sizing: border-box;
-} 
+}
+
+/* Common UI elements */
+.card {
+  background-color: var(--card-background);
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx var(--shadow-color);
+  margin: 20rpx;
+  padding: 30rpx;
+  overflow: hidden;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 40rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.btn:active {
+  opacity: 0.8;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--gradient-secondary);
+  color: white;
+}
+
+.btn-accent {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+/* Common animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Text styles */
+.text-primary { color: var(--primary-color); }
+.text-secondary { color: var(--secondary-color); }
+.text-accent { color: var(--accent-color); }
+.text-warning { color: var(--warning-color); }
+.text-danger { color: var(--danger-color); }
+.text-info { color: var(--info-color); }

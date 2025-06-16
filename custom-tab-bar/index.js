@@ -29,7 +29,35 @@ Component({
       }
     ]
   },
+  lifetimes: {
+    attached: function() {
+      // 在组件实例进入页面节点树时执行
+      this.updateSelected();
+    },
+    ready: function() {
+      // 在组件在视图层布局完成后执行
+      this.updateSelected();
+    }
+  },
+  pageLifetimes: {
+    show: function() {
+      // 页面被展示时执行
+      this.updateSelected();
+    }
+  },
   methods: {
+    updateSelected: function() {
+      // 获取当前页面路径
+      const pages = getCurrentPages();
+      const currentPage = pages[pages.length - 1];
+      const route = '/' + currentPage.route;
+      
+      // 查找当前路径对应的tab索引
+      const idx = this.data.list.findIndex(item => item.pagePath === route);
+      if (idx !== -1 && idx !== this.data.selected) {
+        this.setData({ selected: idx });
+      }
+    },
     switchTab(e) {
       const data = e.currentTarget.dataset;
       const url = data.path;

@@ -13,7 +13,7 @@ Page({
     // 页面显示时执行
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({
-        selected: 4 // 设置底部导航选中项
+        selected: 4 // 个人中心页是第五个标签，索引为4
       })
     }
   },
