@@ -32,7 +32,10 @@ Component({
   lifetimes: {
     attached: function() {
       // 在组件实例进入页面节点树时执行
-      this.updateSelected();
+      // 添加小延迟确保页面完全初始化
+      setTimeout(() => {
+        this.updateSelected();
+      }, 100);
     },
     ready: function() {
       // 在组件在视图层布局完成后执行
@@ -49,9 +52,23 @@ Component({
     updateSelected: function() {
       // 获取当前页面路径
       const pages = getCurrentPages();
+
+      // 检查页面栈是否为空或当前页面是否存在
+      if (!pages || pages.length === 0) {
+        console.warn('No pages found in getCurrentPages()');
+        return;
+      }
+
       const currentPage = pages[pages.length - 1];
+
+      // 检查当前页面是否有route属性
+      if (!currentPage || !currentPage.route) {
+        console.warn('Current page or route not found:', currentPage);
+        return;
+      }
+
       const route = '/' + currentPage.route;
-      
+
       // 查找当前路径对应的tab索引
       const idx = this.data.list.findIndex(item => item.pagePath === route);
       if (idx !== -1 && idx !== this.data.selected) {
@@ -69,4 +86,4 @@ Component({
       });
     }
   }
-}) 
+})

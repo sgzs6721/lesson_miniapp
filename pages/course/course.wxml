@@ -1,15 +1,6 @@
 <!--course.wxml-->
 <view class="page">
 
-  <!-- 搜索和添加课程同一行，使用直角设计 -->
-  <view class="search-add-container">
-    <view class="search-box">
-      <input type="text" placeholder="搜索课程" bindinput="onSearch" value="{{searchKey}}" />
-      <view class="search-icon">🔍</view>
-    </view>
-    <button class="add-btn" bindtap="showAddCourse">添加</button>
-  </view>
-
   <!-- 顶部标签页 -->
   <view class="tabs">
     <view class="tab {{activeTab === 'course' ? 'active' : ''}}" bindtap="switchTab" data-tab="course">课程列表</view>
@@ -18,6 +9,15 @@
 
   <!-- 课程列表 -->
   <view class="tab-content" hidden="{{activeTab !== 'course'}}">
+    <!-- 搜索和添加课程同一行，使用直角设计 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索课程" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddCourse">添加</button>
+  </view>
+  
     <scroll-view class="course-list" scroll-y>
       <view wx:if="{{courseList.length === 0}}" class="empty-tip">暂无课程</view>
       <view wx:for="{{courseList}}" wx:key="id" class="course-item">
