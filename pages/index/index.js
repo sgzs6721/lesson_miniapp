@@ -1,6 +1,7 @@
 // index.js
 // 获取应用实例
 const app = getApp()
+const auth = require('../../utils/auth.js')
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
 
 Component({
@@ -84,6 +85,11 @@ Component({
   },
   pageLifetimes: {
     show: function() {
+      // 检查登录状态
+      if (!auth.checkLoginAndRedirect()) {
+        return;
+      }
+
       if (typeof this.getTabBar === 'function' && this.getTabBar()) {
         this.getTabBar().setData({
           selected: 0

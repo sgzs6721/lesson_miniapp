@@ -1,0 +1,174 @@
+// API 工具类
+const BASE_URL = 'http://lesson.devtesting.top/lesson/api';
+
+/**
+ * 发起网络请求
+ * @param {Object} options 请求配置
+ * @param {string} options.url 请求地址
+ * @param {string} options.method 请求方法，默认GET
+ * @param {Object} options.data 请求数据
+ * @param {Object} options.header 请求头
+ * @param {boolean} options.needAuth 是否需要认证，默认false
+ */
+function request(options) {
+  return new Promise((resolve, reject) => {
+    // 构建完整URL
+    const url = options.url.startsWith('http') ? options.url : BASE_URL + options.url;
+    
+    // 构建请求头
+    let header = {
+      'Content-Type': 'application/json',
+      ...options.header
+    };
+    
+    // 如果需要认证，添加token
+    if (options.needAuth) {
+      const token = wx.getStorageSync('token');
+      if (token) {
+        header['Authorization'] = token; // 直接使用token，不加Bearer前缀
+      }
+    }
+    
+    wx.request({
+      url,
+      method: options.method || 'GET',
+      data: options.data,
+      header,
+      success: (res) => {
+        console.log('API Response:', res);
+        
+        // 处理HTTP状态码
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.data);
+        } else if (res.statusCode === 401) {
+          // 未授权，清除本地存储并跳转到登录页
+          wx.removeStorageSync('token');
+          wx.removeStorageSync('userInfo');
+          wx.reLaunch({
+            url: '/pages/login/login'
+          });
+          reject(new Error('未授权，请重新登录'));
+        } else {
+          reject(new Error(`请求失败: ${res.statusCode}`));
+        }
+      },
+      fail: (err) => {
+        console.error('API Error:', err);
+        reject(err);
+      }
+    });
+  });
+}
+
+/**
+ * 用户登录
+ * @param {string} phone 手机号
+ * @param {string} password 密码
+ */
+function login(phone, password) {
+  return request({
+    url: '/auth/login',
+    method: 'POST',
+    data: {
+      phone,
+      password
+    }
+  });
+}
+
+/**
+ * 获取用户信息
+ */
+function getUserInfo() {
+  return request({
+    url: '/user/info',
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 用户登出
+ */
+function logout() {
+  return request({
+    url: '/auth/logout',
+    method: 'POST',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取校区列表
+ * @param {number} pageNum 页码，默认1
+ * @param {number} pageSize 每页数量，默认10
+ */
+function getCampusList(pageNum = 1, pageSize = 10) {
+  return request({
+    url: `/campus/list?pageNum=${pageNum}&pageSize=${pageSize}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取校区详情
+ * @param {number} campusId 校区ID
+ */
+function getCampusDetail(campusId) {
+  return request({
+    url: `/campus/detail?id=${campusId}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 添加校区
+ * @param {Object} campusData 校区数据
+ */
+function addCampus(campusData) {
+  return request({
+    url: '/campus/create',
+    method: 'POST',
+    data: campusData,
+    needAuth: true
+  });
+}
+
+/**
+ * 更新校区
+ * @param {Object} campusData 校区数据
+ */
+function updateCampus(campusData) {
+  return request({
+    url: '/campus/update',
+    method: 'POST',
+    data: campusData,
+    needAuth: true
+  });
+}
+
+/**
+ * 删除校区
+ * @param {number} campusId 校区ID
+ */
+function deleteCampus(campusId) {
+  return request({
+    url: `/campus/delete?id=${campusId}`,
+    method: 'POST',
+    needAuth: true
+  });
+}
+
+module.exports = {
+  request,
+  login,
+  getUserInfo,
+  logout,
+  getCampusList,
+  getCampusDetail,
+  addCampus,
+  updateCampus,
+  deleteCampus
+};

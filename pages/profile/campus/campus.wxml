@@ -14,16 +14,22 @@
   </view>
 
   <!-- 校区列表 -->
-  <scroll-view class="campus-list" scroll-y>
-    <view wx:if="{{campusList.length === 0}}" class="empty-tip">暂无校区</view>
+  <scroll-view class="campus-list" scroll-y enable-back-to-top>
+    <view wx:if="{{loading && campusList.length === 0}}" class="loading-tip">加载中...</view>
+    <view wx:elif="{{!loading && campusList.length === 0}}" class="empty-tip">暂无校区</view>
     <view wx:for="{{campusList}}" wx:key="id" class="campus-item">
       <view class="campus-info" bindtap="showCampusDetail" data-id="{{item.id}}">
         <view class="campus-name">{{item.name}}</view>
         <view class="campus-address">{{item.address}}</view>
         <view class="campus-meta">
-          <text class="campus-phone">{{item.phone}}</text>
+          <text class="campus-phone">{{item.managerPhone || '暂无电话'}}</text>
           <text class="dot">·</text>
-          <text class="campus-manager">负责人: {{item.manager}}</text>
+          <text class="campus-manager">负责人: {{item.managerName || '暂无'}}</text>
+        </view>
+        <view class="campus-stats">
+          <text class="stat-item">学员: {{item.studentCount || 0}}人</text>
+          <text class="stat-item">教练: {{item.coachCount || 0}}人</text>
+          <text class="stat-item">月租: ¥{{item.monthlyRent || 0}}</text>
         </view>
       </view>
       <view class="campus-actions">
@@ -31,6 +37,10 @@
         <view class="action-btn delete" catchtap="deleteCampus" data-id="{{item.id}}">删除</view>
       </view>
     </view>
+
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading && campusList.length > 0}}" class="load-more-tip">加载中...</view>
+    <view wx:elif="{{!hasMore && campusList.length > 0}}" class="load-more-tip">没有更多了</view>
   </scroll-view>
 
   <!-- 添加/编辑校区弹窗 -->
@@ -51,16 +61,22 @@
           <input type="text" placeholder="请输入详细地址" value="{{campusForm.address}}" bindinput="onCampusFormInput" data-field="address" />
         </view>
         <view class="form-item">
-          <text class="label">联系电话</text>
-          <input type="text" placeholder="请输入联系电话" value="{{campusForm.phone}}" bindinput="onCampusFormInput" data-field="phone" />
+          <text class="label">运营状态</text>
+          <picker bindchange="onStatusChange" value="{{campusForm.status === 'OPERATING' ? 0 : 1}}" range="{{['营业中', '已关闭']}}">
+            <view class="picker">{{campusForm.status === 'OPERATING' ? '营业中' : '已关闭'}}</view>
+          </picker>
         </view>
         <view class="form-item">
-          <text class="label">负责人</text>
-          <input type="text" placeholder="请输入负责人姓名" value="{{campusForm.manager}}" bindinput="onCampusFormInput" data-field="manager" />
+          <text class="label">月租金</text>
+          <input type="digit" placeholder="请输入月租金" value="{{campusForm.monthlyRent}}" bindinput="onCampusFormInput" data-field="monthlyRent" />
         </view>
         <view class="form-item">
-          <text class="label">备注</text>
-          <textarea placeholder="请输入备注信息" value="{{campusForm.remark}}" bindinput="onCampusFormInput" data-field="remark" />
+          <text class="label">物业费</text>
+          <input type="digit" placeholder="请输入物业费" value="{{campusForm.propertyFee}}" bindinput="onCampusFormInput" data-field="propertyFee" />
+        </view>
+        <view class="form-item">
+          <text class="label">水电费</text>
+          <input type="digit" placeholder="请输入水电费" value="{{campusForm.utilityFee}}" bindinput="onCampusFormInput" data-field="utilityFee" />
         </view>
       </view>
       <view class="modal-footer">
@@ -88,12 +104,27 @@
           <text class="value">{{currentCampus.address}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">联系电话</text>
-          <text class="value">{{currentCampus.phone}}</text>
+          <text class="label">月租金</text>
+          <text class="value">¥{{currentCampus.monthlyRent || 0}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">负责人</text>
-          <text class="value">{{currentCampus.manager}}</text>
+          <text class="label">物业费</text>
+          <text class="value">¥{{currentCampus.propertyFee || 0}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">水电费</text>
+          <text class="value">¥{{currentCampus.utilityFee || 0}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">负责人姓名</text>
+          <text class="value">{{currentCampus.managerName || '暂无'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">负责人电话</text>
+          <text class="value">{{currentCampus.managerPhone || '暂无'}}</text>
+        </view>
+        <view class="detail-note">
+          <text class="note-text">注：负责人信息需要通过其他方式设置</text>
         </view>
         <view class="detail-item">
           <text class="label">学员数量</text>
@@ -104,12 +135,16 @@
           <text class="value">{{currentCampus.coachCount || 0}}人</text>
         </view>
         <view class="detail-item">
-          <text class="label">课程数量</text>
-          <text class="value">{{currentCampus.courseCount || 0}}个</text>
+          <text class="label">待上课程</text>
+          <text class="value">{{currentCampus.pendingLessonCount || 0}}个</text>
         </view>
         <view class="detail-item">
-          <text class="label">备注</text>
-          <text class="value">{{currentCampus.remark || '无'}}</text>
+          <text class="label">运营状态</text>
+          <text class="value">{{currentCampus.status === 'OPERATING' ? '营业中' : '已关闭'}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">创建时间</text>
+          <text class="value">{{currentCampus.createdTime || '暂无'}}</text>
         </view>
       </view>
       <view class="modal-footer">
@@ -117,4 +152,4 @@
       </view>
     </view>
   </view>
-</view> 
+</view>

@@ -2,11 +2,15 @@
 <view class="page">
   <view class="header">
     <view class="user-info">
-      <image class="avatar" src="/images/default-avatar.png"></image>
-      <view class="name">管理员</view>
+      <image class="avatar" src="{{userInfo.avatar}}"></image>
+      <view class="user-details">
+        <view class="name">{{userInfo.name}}</view>
+        <view class="role" wx:if="{{userInfo.roleName}}">{{userInfo.roleName}}</view>
+        <view class="phone" wx:if="{{userInfo.phone}}">{{userInfo.phone}}</view>
+      </view>
     </view>
   </view>
-  
+
   <view class="menu-list">
     <view class="menu-item" bindtap="navigateTo" data-page="campus">
       <view class="menu-item-title">校区管理</view>
@@ -18,6 +22,10 @@
     </view>
     <view class="menu-item" bindtap="navigateTo" data-page="user">
       <view class="menu-item-title">用户管理</view>
+      <view class="menu-item-arrow"></view>
+    </view>
+    <view class="menu-item logout-item" bindtap="navigateTo" data-page="logout">
+      <view class="menu-item-title logout-text">退出登录</view>
       <view class="menu-item-arrow"></view>
     </view>
   </view>

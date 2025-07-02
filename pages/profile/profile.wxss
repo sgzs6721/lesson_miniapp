@@ -12,7 +12,7 @@ page {
 }
 
 .header {
-  background-color: #3cc51f;
+  background: linear-gradient(135deg, #4A6FFF 0%, #6B8AFF 100%);
   padding: 40rpx 30rpx;
 }
 
@@ -28,11 +28,28 @@ page {
   background-color: #fff;
 }
 
-.name {
+.user-details {
   margin-left: 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
   font-size: 32rpx;
   color: #fff;
   font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.role {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 6rpx;
+}
+
+.phone {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .menu-list {
@@ -59,4 +76,14 @@ page {
   border-top: 2rpx solid #999;
   border-right: 2rpx solid #999;
   transform: rotate(45deg);
+}
+
+/* 退出登录样式 */
+.logout-item {
+  margin-top: 20rpx;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.logout-text {
+  color: #ff4757 !important;
 }

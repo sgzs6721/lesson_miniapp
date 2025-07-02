@@ -120,10 +120,20 @@ page {
 .campus-meta {
   font-size: 26rpx;
   color: #666;
+  margin-bottom: 10rpx;
 }
 
 .dot {
   margin: 0 10rpx;
+}
+
+.campus-stats {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.stat-item {
+  margin-right: 20rpx;
 }
 
 .campus-actions {
@@ -215,6 +225,10 @@ page {
   padding: 30rpx;
 }
 
+.modal-body .detail-item:first-child {
+  padding-top: 0;
+}
+
 .form-item {
   margin-bottom: 30rpx;
 }
@@ -235,6 +249,9 @@ page {
   padding: 0 20rpx;
   font-size: 28rpx;
   color: #333;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 .form-item textarea {
@@ -275,24 +292,58 @@ page {
 
 /* 详情样式 */
 .detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20rpx;
+  padding: 15rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
 }
 
 .detail-item .label {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 8rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
 }
 
 .detail-item .value {
   font-size: 28rpx;
   color: #333;
+  text-align: right;
+  flex: 1;
 }
 
-/* 空状态 */
-.empty-tip {
+.detail-note {
+  margin-top: 20rpx;
+  padding: 15rpx;
+  background-color: #f8f9fa;
+  border-radius: 8rpx;
+}
+
+.note-text {
+  font-size: 24rpx;
+  color: #666;
+  font-style: italic;
+}
+
+/* 空状态和加载状态 */
+.empty-tip, .loading-tip, .load-more-tip {
   text-align: center;
-  padding: 100rpx 0;
+  padding: 40rpx 0;
   color: #999;
   font-size: 28rpx;
-} 
+}
+
+.empty-tip {
+  padding: 100rpx 0;
+}
+
+.load-more-tip {
+  padding: 20rpx 0;
+  font-size: 24rpx;
+}

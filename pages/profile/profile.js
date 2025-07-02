@@ -1,4 +1,6 @@
 // profile.js
+const auth = require('../../utils/auth.js');
+
 Page({
   data: {
     userInfo: {
@@ -8,6 +10,22 @@ Page({
   },
   onLoad() {
     // 页面加载时执行
+    this.loadUserInfo();
+  },
+
+  // 加载用户信息
+  loadUserInfo() {
+    const currentUser = auth.getCurrentUser();
+    if (currentUser) {
+      this.setData({
+        userInfo: {
+          name: currentUser.realName || currentUser.name || '管理员',
+          avatar: currentUser.avatar || '/images/default-avatar.png',
+          phone: currentUser.phone,
+          roleName: currentUser.roleName || '管理员'
+        }
+      });
+    }
   },
   onShow() {
     // 页面显示时执行
@@ -48,8 +66,50 @@ Page({
           url: '/pages/profile/analysis/analysis'
         });
         break;
+      case 'logout':
+        this.handleLogout();
+        break;
       default:
         break;
     }
+  },
+
+  // 处理登出
+  handleLogout() {
+    wx.showModal({
+      title: '确认登出',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({
+            title: '退出中...'
+          });
+
+          auth.logout()
+            .then(() => {
+              wx.hideLoading();
+              wx.showToast({
+                title: '已退出登录',
+                icon: 'success'
+              });
+
+              // 跳转到登录页
+              setTimeout(() => {
+                wx.reLaunch({
+                  url: '/pages/login/login'
+                });
+              }, 1500);
+            })
+            .catch((error) => {
+              wx.hideLoading();
+              console.error('Logout error:', error);
+              wx.showToast({
+                title: '退出失败',
+                icon: 'none'
+              });
+            });
+        }
+      }
+    });
   }
-}) 
+})

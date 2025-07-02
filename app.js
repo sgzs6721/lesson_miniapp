@@ -1,4 +1,6 @@
 // app.js
+const auth = require('./utils/auth.js');
+
 App({
   onLaunch() {
     // 设置全局主题色
@@ -6,18 +8,29 @@ App({
       frontColor: '#ffffff',
       backgroundColor: '#4A6FFF'
     });
-    
+
     // 展示本地存储能力
     const logs = wx.getStorageSync('logs') || []
     logs.unshift(Date.now())
     wx.setStorageSync('logs', logs)
 
-    // 登录
-    wx.login({
-      success: res => {
-        // 发送 res.code 到后台换取 openId, sessionKey, unionId
-      }
-    })
+    // 检查登录状态
+    this.checkLoginStatus();
+  },
+
+  // 检查登录状态
+  checkLoginStatus() {
+    if (auth.isLoggedIn()) {
+      // 已登录，跳转到首页
+      wx.reLaunch({
+        url: '/pages/index/index'
+      });
+    } else {
+      // 未登录，跳转到登录页
+      wx.reLaunch({
+        url: '/pages/login/login'
+      });
+    }
   },
   globalData: {
     userInfo: null,

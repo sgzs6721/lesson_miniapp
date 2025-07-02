@@ -1,4 +1,5 @@
 {
   "navigationBarTitleText": "校区管理",
+  "enablePullDownRefresh": true,
   "usingComponents": {}
-} 
+}
