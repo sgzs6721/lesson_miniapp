@@ -161,6 +161,10 @@ Component({
       const campus = this.data.campusList.find(item => item.id === campusId);
 
       if (campus) {
+        // 保存到全局校区选择
+        const campusCache = require('../../utils/campus-cache.js');
+        campusCache.setCurrentCampus(campus);
+
         this.setData({
           currentCampus: campus,
           showCampusSelector: false
@@ -276,43 +280,43 @@ Component({
       });
 
       try {
-        // 直接调用API获取校区列表
-        const api = require('../../utils/api.js');
-        const response = await api.getCampusList(1, 100); // 获取所有校区
+        // 使用校区缓存工具初始化
+        const campusCache = require('../../utils/campus-cache.js');
+        const currentCampus = await campusCache.initCampusCache();
 
-        if (response.code === 200) {
-          const campusList = response.data.list || [];
+        // 获取校区列表
+        const campusList = await campusCache.getCampusList();
 
-          // 更新校区列表
+        // 更新校区列表
+        this.setData({
+          campusList: campusList
+        });
+
+        // 设置当前校区
+        if (currentCampus) {
           this.setData({
-            campusList: campusList
+            currentCampus: currentCampus
           });
 
-          // 同时更新缓存
-          if (campusList.length > 0) {
-            wx.setStorageSync('campusCache', {
-              data: campusList,
-              timestamp: Date.now()
+          // 加载校区相关数据
+          this.loadCampusData(currentCampus.id);
+        } else if (campusList.length > 0) {
+          // 如果没有当前校区但有校区列表，选择第一个营业中的校区
+          const firstOperating = campusCache.getFirstOperatingCampus(campusList);
+          if (firstOperating) {
+            campusCache.setCurrentCampus(firstOperating);
+            this.setData({
+              currentCampus: firstOperating
             });
+            this.loadCampusData(firstOperating.id);
           }
-
-          // 选择合适的校区
-          this.selectAppropiateCampus(campusList);
-        } else {
-          // API返回错误，重置标记以允许重试
-          this.setData({
-            campusDataLoaded: false
-          });
-          wx.showToast({
-            title: response.message || '获取校区列表失败',
-            icon: 'none'
-          });
         }
       } catch (error) {
         // 网络错误，重置标记以允许重试
         this.setData({
           campusDataLoaded: false
         });
+        console.error('Load campus list error:', error);
         wx.showToast({
           title: '网络错误，请重试',
           icon: 'none'
@@ -326,26 +330,34 @@ Component({
         return;
       }
 
+      const campusCache = require('../../utils/campus-cache.js');
       const currentUser = auth.getCurrentUser();
       let selectedCampus = null;
 
+      // 首先检查是否已有全局选中的校区
+      const currentCampus = campusCache.getCurrentCampus();
+      if (currentCampus && campusList.find(c => c.id === currentCampus.id)) {
+        selectedCampus = currentCampus;
+      }
       // 如果用户有指定校区，尝试找到对应的校区
-      if (currentUser && currentUser.campusId) {
+      else if (currentUser && currentUser.campusId) {
         selectedCampus = campusList.find(c => c.id === currentUser.campusId);
       }
-
-      // 如果没有找到用户指定校区，选择第一个
-      if (!selectedCampus) {
-        selectedCampus = campusList[0];
+      // 如果没有找到，选择第一个营业中的校区
+      else {
+        selectedCampus = campusCache.getFirstOperatingCampus(campusList);
       }
 
-      // 更新当前校区
-      this.setData({
-        currentCampus: selectedCampus
-      });
+      if (selectedCampus) {
+        // 保存到全局校区选择
+        campusCache.setCurrentCampus(selectedCampus);
 
-      // 加载校区相关数据
-      if (selectedCampus && selectedCampus.id) {
+        // 更新当前校区
+        this.setData({
+          currentCampus: selectedCampus
+        });
+
+        // 加载校区相关数据
         this.loadCampusData(selectedCampus.id);
       }
     },

@@ -41,7 +41,7 @@ function saveLoginInfo(token, userInfo) {
 function clearLoginInfo() {
   wx.removeStorageSync('token');
   wx.removeStorageSync('userInfo');
-  // 清除校区缓存
+  // 清除校区缓存和选择
   campusCache.clearCampusCache();
 }
 
@@ -96,7 +96,7 @@ function login(phone, password) {
  * 用户登出
  */
 function logout() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // 先调用API登出
     api.logout()
       .then(() => {

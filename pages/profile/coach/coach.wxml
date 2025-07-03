@@ -13,23 +13,41 @@
     <button class="add-btn" bindtap="showAddCoach">添加</button>
   </view>
 
+  <!-- 校区筛选 -->
+  <view class="filter-container">
+    <picker mode="selector" range="{{campusList}}" range-key="name" value="{{selectedCampusIndex}}" bindchange="onCampusFilterChange">
+      <view class="filter-picker">
+        <text>{{campusList[selectedCampusIndex].name || '请选择校区'}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+    </picker>
+  </view>
+
   <!-- 教练列表 -->
   <scroll-view class="coach-list" scroll-y>
-    <view wx:if="{{coachList.length === 0}}" class="empty-tip">暂无教练</view>
+    <view wx:if="{{!selectedCampusId}}" class="empty-tip">请选择校区查看教练</view>
+    <view wx:elif="{{loading && coachList.length === 0}}" class="loading-tip">加载中...</view>
+    <view wx:elif="{{coachList.length === 0}}" class="empty-tip">暂无教练</view>
     <view wx:for="{{coachList}}" wx:key="id" class="coach-item">
       <view class="coach-info" bindtap="showCoachDetail" data-id="{{item.id}}">
         <image class="coach-avatar" src="{{item.avatar || '/images/default-avatar.png'}}"></image>
         <view class="coach-detail">
-          <view class="coach-name">{{item.name}} <text class="coach-gender">{{item.gender === 'male' ? '男' : '女'}}</text></view>
+          <view class="coach-name">
+            {{item.name}}
+            <text class="coach-gender">{{item.gender === 'MALE' ? '男' : '女'}}</text>
+            <text class="coach-age">{{item.age}}岁</text>
+          </view>
           <view class="coach-meta">
             <text>{{item.phone}}</text>
             <text class="dot">·</text>
-            <text>{{item.campus}}</text>
+            <text>{{item.campusName}}</text>
           </view>
-          <view class="coach-courses">
-            <text>{{item.courseCount}}门课程</text>
+          <view class="coach-info-row">
+            <text>{{item.jobTitle}}</text>
             <text class="dot">·</text>
-            <text>{{item.studentCount}}名学员</text>
+            <text>{{item.experience}}年教龄</text>
+            <text class="dot">·</text>
+            <text class="status-{{item.status}}">{{item.status === 'ACTIVE' ? '在职' : (item.status === 'VACATION' ? '休假中' : '已离职')}}</text>
           </view>
         </view>
       </view>
@@ -38,6 +56,10 @@
         <view class="action-btn delete" catchtap="deleteCoach" data-id="{{item.id}}">删除</view>
       </view>
     </view>
+
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading && coachList.length > 0}}" class="loading-more">加载中...</view>
+    <view wx:elif="{{!hasMore && coachList.length > 0}}" class="no-more">没有更多了</view>
   </scroll-view>
 
   <!-- 添加/编辑教练弹窗 -->
@@ -49,37 +71,108 @@
         <view class="modal-close" bindtap="hideCoachModal">×</view>
       </view>
       <view class="modal-body">
-        <view class="form-item">
-          <text class="label">姓名</text>
-          <input type="text" placeholder="请输入教练姓名" value="{{coachForm.name}}" bindinput="onCoachFormInput" data-field="name" />
+        <!-- 基本信息 -->
+        <view class="form-section">
+          <view class="section-title">基本信息</view>
+          <view class="form-item">
+            <text class="label">姓名</text>
+            <input type="text" placeholder="请输入姓名" value="{{coachForm.name}}" bindinput="onCoachFormInput" data-field="name" />
+          </view>
+          <view class="form-item">
+            <text class="label">性别</text>
+            <picker mode="selector" range="{{genderOptions}}" value="{{coachForm.genderIndex}}" bindchange="onGenderChange">
+              <view class="picker">
+                {{genderOptions[coachForm.genderIndex] || '请选择性别'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">年龄</text>
+            <input type="number" placeholder="请输入年龄" value="{{coachForm.age}}" bindinput="onCoachFormInput" data-field="age" />
+          </view>
+          <view class="form-item">
+            <text class="label">联系电话</text>
+            <input type="text" placeholder="请输入手机号" value="{{coachForm.phone}}" bindinput="onCoachFormInput" data-field="phone" />
+          </view>
         </view>
-        <view class="form-item">
-          <text class="label">性别</text>
-          <picker mode="selector" range="{{['男', '女']}}" value="{{coachForm.genderIndex}}" bindchange="onGenderChange">
-            <view class="picker">
-              {{coachForm.gender === 'male' ? '男' : (coachForm.gender === 'female' ? '女' : '请选择性别')}}
+
+        <!-- 职位信息 -->
+        <view class="form-section">
+          <view class="section-title">职位信息</view>
+          <view class="form-item">
+            <text class="label">职位</text>
+            <picker mode="selector" range="{{jobTitleOptions}}" value="{{coachForm.jobTitleIndex}}" bindchange="onJobTitleChange">
+              <view class="picker">
+                {{jobTitleOptions[coachForm.jobTitleIndex] || '请选择职位'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">教龄(年)</text>
+            <input type="number" placeholder="请输入教龄" value="{{coachForm.experience}}" bindinput="onCoachFormInput" data-field="experience" />
+          </view>
+          <view class="form-item">
+            <text class="label">入职日期</text>
+            <picker mode="date" value="{{coachForm.hireDate}}" bindchange="onHireDateChange">
+              <view class="picker">
+                {{coachForm.hireDate || '请选择入职日期'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">状态</text>
+            <picker mode="selector" range="{{statusOptions}}" value="{{coachForm.statusIndex}}" bindchange="onStatusChange">
+              <view class="picker">
+                {{statusOptions[coachForm.statusIndex] || '请选择状态'}}
+              </view>
+            </picker>
+          </view>
+
+          <view class="form-item">
+            <text class="label">所属校区</text>
+            <!-- 编辑模式显示校区名称（只读），添加模式显示选择器 -->
+            <view wx:if="{{editingCoach}}" class="readonly-field">
+              <text>{{coachForm.campusName || '未知校区'}}</text>
             </view>
-          </picker>
+            <picker wx:else mode="selector" range="{{campusList}}" range-key="name" value="{{coachForm.campusIndex}}" bindchange="onCampusChange">
+              <view class="picker">
+                {{campusList[coachForm.campusIndex].name || '请选择所属校区'}}
+              </view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">持有证书</text>
+            <textarea placeholder="每行输入一个证书" value="{{coachForm.certifications}}" bindinput="onCoachFormInput" data-field="certifications" />
+          </view>
         </view>
-        <view class="form-item">
-          <text class="label">联系电话</text>
-          <input type="text" placeholder="请输入联系电话" value="{{coachForm.phone}}" bindinput="onCoachFormInput" data-field="phone" />
-        </view>
-        <view class="form-item">
-          <text class="label">所属校区</text>
-          <picker mode="selector" range="{{campusList}}" range-key="name" value="{{coachForm.campusIndex}}" bindchange="onCampusChange">
-            <view class="picker">
-              {{coachForm.campus || '请选择所属校区'}}
-            </view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <text class="label">教学科目</text>
-          <input type="text" placeholder="请输入教学科目" value="{{coachForm.subjects}}" bindinput="onCoachFormInput" data-field="subjects" />
-        </view>
-        <view class="form-item">
-          <text class="label">简介</text>
-          <textarea placeholder="请输入简介" value="{{coachForm.intro}}" bindinput="onCoachFormInput" data-field="intro" />
+
+        <!-- 薪资信息 -->
+        <view class="form-section">
+          <view class="section-title">薪资信息</view>
+          <view class="form-item">
+            <text class="label">基本工资</text>
+            <input type="digit" placeholder="请输入基本工资(元)" value="{{coachForm.baseSalary}}" bindinput="onCoachFormInput" data-field="baseSalary" />
+          </view>
+          <view class="form-item">
+            <text class="label">社保费</text>
+            <input type="digit" placeholder="请输入社保费(元)" value="{{coachForm.socialInsurance}}" bindinput="onCoachFormInput" data-field="socialInsurance" />
+          </view>
+          <view class="form-item">
+            <text class="label">课时费(元/时)</text>
+            <input type="digit" placeholder="请输入课时费" value="{{coachForm.classFee}}" bindinput="onCoachFormInput" data-field="classFee" />
+          </view>
+          <view class="form-item">
+            <text class="label">绩效奖金</text>
+            <input type="digit" placeholder="请输入绩效奖金(元)" value="{{coachForm.performanceBonus}}" bindinput="onCoachFormInput" data-field="performanceBonus" />
+          </view>
+          <view class="form-item">
+            <text class="label">提成(%)</text>
+            <input type="digit" placeholder="请输入提成比例" value="{{coachForm.commission}}" bindinput="onCoachFormInput" data-field="commission" />
+          </view>
+          <view class="form-item">
+            <text class="label">分红</text>
+            <input type="digit" placeholder="请输入分红(元)" value="{{coachForm.dividend}}" bindinput="onCoachFormInput" data-field="dividend" />
+          </view>
         </view>
       </view>
       <view class="modal-footer">
@@ -98,37 +191,84 @@
         <view class="modal-close" bindtap="hideDetailModal">×</view>
       </view>
       <view class="modal-body">
-        <view class="detail-item">
-          <text class="label">姓名</text>
-          <text class="value">{{currentCoach.name}}</text>
+        <view class="detail-section">
+          <view class="section-title">基本信息</view>
+          <view class="detail-item">
+            <text class="label">姓名：</text>
+            <text class="value">{{currentCoach.name}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">性别：</text>
+            <text class="value">{{currentCoach.gender === 'MALE' ? '男' : '女'}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">年龄：</text>
+            <text class="value">{{currentCoach.age}}岁</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">联系电话：</text>
+            <text class="value">{{currentCoach.phone}}</text>
+          </view>
         </view>
-        <view class="detail-item">
-          <text class="label">性别</text>
-          <text class="value">{{currentCoach.gender === 'male' ? '男' : '女'}}</text>
+
+        <view class="detail-section">
+          <view class="section-title">职位信息</view>
+          <view class="detail-item">
+            <text class="label">职位：</text>
+            <text class="value">{{currentCoach.jobTitle}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">入职日期：</text>
+            <text class="value">{{currentCoach.hireDate}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">教龄：</text>
+            <text class="value">{{currentCoach.experience}}年</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">状态：</text>
+            <text class="value">{{currentCoach.status === 'ACTIVE' ? '在职' : (currentCoach.status === 'VACATION' ? '休假中' : '已离职')}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">所属校区：</text>
+            <text class="value">{{currentCoach.campusName}}</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">持有证书：</text>
+            <text class="value">{{currentCoach.certificationsText || '无'}}</text>
+          </view>
         </view>
-        <view class="detail-item">
-          <text class="label">联系电话</text>
-          <text class="value">{{currentCoach.phone}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">所属校区</text>
-          <text class="value">{{currentCoach.campus}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">教学科目</text>
-          <text class="value">{{currentCoach.subjects}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">课程数量</text>
-          <text class="value">{{currentCoach.courseCount}}门</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">学员数量</text>
-          <text class="value">{{currentCoach.studentCount}}人</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">简介</text>
-          <text class="value">{{currentCoach.intro || '无'}}</text>
+
+        <view class="detail-section" wx:if="{{currentCoach.salary}}">
+          <view class="section-title">薪资信息</view>
+          <view class="detail-item">
+            <text class="label">基本工资：</text>
+            <text class="value">{{currentCoach.salary.baseSalary}}元</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">社保费：</text>
+            <text class="value">{{currentCoach.salary.socialInsurance}}元</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">课时费：</text>
+            <text class="value">{{currentCoach.salary.classFee}}元/时</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">绩效奖金：</text>
+            <text class="value">{{currentCoach.salary.performanceBonus}}元</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">提成：</text>
+            <text class="value">{{currentCoach.salary.commission}}%</text>
+          </view>
+          <view class="detail-item">
+            <text class="label">分红：</text>
+            <text class="value">{{currentCoach.salary.dividend}}元</text>
+          </view>
+          <view class="detail-item" wx:if="{{currentCoach.salary.effectiveDate}}">
+            <text class="label">生效日期：</text>
+            <text class="value">{{currentCoach.salary.effectiveDate}}</text>
+          </view>
         </view>
       </view>
       <view class="modal-footer">
@@ -136,4 +276,4 @@
       </view>
     </view>
   </view>
-</view> 
+</view>

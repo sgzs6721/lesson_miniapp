@@ -86,7 +86,7 @@
         </view>
         <view class="form-item" wx:if="{{!editingUser}}">
           <text class="label">初始密码</text>
-          <input type="password" placeholder="请输入初始密码" value="{{userForm.password}}" bindinput="onUserFormInput" data-field="password" />
+          <input type="text" password placeholder="请输入初始密码" value="{{userForm.password}}" bindinput="onUserFormInput" data-field="password" />
         </view>
       </view>
       <view class="modal-footer">
@@ -106,31 +106,31 @@
       </view>
       <view class="modal-body">
         <view class="detail-item">
-          <text class="label">真实姓名</text>
+          <text class="label">真实姓名：</text>
           <text class="value">{{currentUser.realName}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">手机号</text>
+          <text class="label">手机号：</text>
           <text class="value">{{currentUser.phone}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">角色</text>
+          <text class="label">角色：</text>
           <text class="value">{{currentUser.role ? currentUser.role.name : '未知'}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">所属校区</text>
-          <text class="value">{{currentUser.campus ? currentUser.campus.name : '全部校区'}}</text>
+          <text class="label">所属校区：</text>
+          <text class="value">{{currentUser.campus.name || ''}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">账号状态</text>
+          <text class="label">账号状态：</text>
           <text class="value">{{currentUser.status === 'ENABLED' ? '启用' : '禁用'}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">创建时间</text>
+          <text class="label">创建时间：</text>
           <text class="value">{{currentUser.createdTime || '未知'}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">最近登录</text>
+          <text class="label">最近登录：</text>
           <text class="value">{{currentUser.lastLoginTime || '从未登录'}}</text>
         </view>
       </view>

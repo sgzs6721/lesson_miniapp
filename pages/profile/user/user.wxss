@@ -331,18 +331,30 @@ page {
 
 /* 详情样式 */
 .detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20rpx;
+  padding: 15rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
 }
 
 .detail-item .label {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 8rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
 }
 
 .detail-item .value {
   font-size: 28rpx;
   color: #333;
+  text-align: right;
+  flex: 1;
 }
 
 /* 空状态和加载状态 */

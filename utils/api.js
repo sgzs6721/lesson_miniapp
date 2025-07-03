@@ -212,6 +212,76 @@ function deleteUser(userId) {
   });
 }
 
+/**
+ * 获取教练列表
+ * @param {number} pageNum 页码，默认1
+ * @param {number} pageSize 每页数量，默认10
+ * @param {number} campusId 校区ID，必需
+ */
+function getCoachList(pageNum = 1, pageSize = 10, campusId) {
+  if (!campusId) {
+    throw new Error('campusId is required for getCoachList');
+  }
+
+  const url = `/coach/list?pageNum=${pageNum}&pageSize=${pageSize}&campusId=${campusId}`;
+  return request({
+    url: url,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取教练详情
+ * @param {number} coachId 教练ID
+ * @param {number} campusId 校区ID
+ */
+function getCoachDetail(coachId, campusId) {
+  return request({
+    url: `/coach/detail?id=${coachId}&campusId=${campusId}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 创建教练
+ * @param {Object} coachData 教练数据
+ */
+function createCoach(coachData) {
+  return request({
+    url: '/coach/create',
+    method: 'POST',
+    data: coachData,
+    needAuth: true
+  });
+}
+
+/**
+ * 更新教练
+ * @param {Object} coachData 教练数据
+ */
+function updateCoach(coachData) {
+  return request({
+    url: '/coach/update',
+    method: 'POST',
+    data: coachData,
+    needAuth: true
+  });
+}
+
+/**
+ * 删除教练
+ * @param {number} coachId 教练ID
+ */
+function deleteCoach(coachId) {
+  return request({
+    url: `/coach/delete?id=${coachId}`,
+    method: 'POST',
+    needAuth: true
+  });
+}
+
 module.exports = {
   request,
   login,
@@ -225,5 +295,10 @@ module.exports = {
   getUserList,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getCoachList,
+  getCoachDetail,
+  createCoach,
+  updateCoach,
+  deleteCoach
 };
