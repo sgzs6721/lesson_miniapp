@@ -1,5 +1,6 @@
 // 认证工具类
 const api = require('./api.js');
+const campusCache = require('./campus-cache.js');
 
 /**
  * 检查用户是否已登录
@@ -40,6 +41,8 @@ function saveLoginInfo(token, userInfo) {
 function clearLoginInfo() {
   wx.removeStorageSync('token');
   wx.removeStorageSync('userInfo');
+  // 清除校区缓存
+  campusCache.clearCampusCache();
 }
 
 /**
@@ -73,6 +76,7 @@ function login(phone, password) {
             };
 
             saveLoginInfo(token, userInfo);
+
             resolve({ token, userInfo });
           } else {
             reject(new Error('登录响应中未找到token'));

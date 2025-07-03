@@ -76,9 +76,10 @@ page {
 
 .campus-popup-content {
   position: absolute;
-  bottom: 0;
+  bottom: 100rpx;
   left: 0;
   width: 100%;
+  max-height: calc(70vh - 100rpx);
   background-color: var(--card-background);
   border-radius: 30rpx 30rpx 0 0;
   transform: translateY(100%);
@@ -111,7 +112,15 @@ page {
 }
 
 .campus-list {
-  max-height: 60vh;
+  max-height: calc(60vh - 100rpx);
+  padding-bottom: 100rpx;
+}
+
+.empty-campus {
+  padding: 60rpx 30rpx;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
 }
 
 .campus-item {

@@ -161,6 +161,57 @@ function deleteCampus(campusId) {
   });
 }
 
+/**
+ * 获取用户列表
+ * @param {number} pageNum 页码，默认1
+ * @param {number} pageSize 每页数量，默认10
+ */
+function getUserList(pageNum = 1, pageSize = 10) {
+  return request({
+    url: `/user/list?pageNum=${pageNum}&pageSize=${pageSize}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 创建用户
+ * @param {Object} userData 用户数据
+ */
+function createUser(userData) {
+  return request({
+    url: '/user/create',
+    method: 'POST',
+    data: userData,
+    needAuth: true
+  });
+}
+
+/**
+ * 更新用户
+ * @param {Object} userData 用户数据
+ */
+function updateUser(userData) {
+  return request({
+    url: '/user/update',
+    method: 'POST',
+    data: userData,
+    needAuth: true
+  });
+}
+
+/**
+ * 删除用户
+ * @param {number} userId 用户ID
+ */
+function deleteUser(userId) {
+  return request({
+    url: `/user/delete?id=${userId}`,
+    method: 'POST',
+    needAuth: true
+  });
+}
+
 module.exports = {
   request,
   login,
@@ -170,5 +221,9 @@ module.exports = {
   getCampusDetail,
   addCampus,
   updateCampus,
-  deleteCampus
+  deleteCampus,
+  getUserList,
+  createUser,
+  updateUser,
+  deleteUser
 };

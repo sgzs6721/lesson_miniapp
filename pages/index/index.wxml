@@ -18,9 +18,12 @@
         <view class="campus-popup-close" bindtap="hideCampusSelector">×</view>
       </view>
       <scroll-view scroll-y class="campus-list">
-        <view 
-          wx:for="{{campusList}}" 
-          wx:key="id" 
+        <view wx:if="{{campusList.length === 0}}" class="empty-campus">
+          <text>暂无校区数据</text>
+        </view>
+        <view
+          wx:for="{{campusList}}"
+          wx:key="id"
           class="campus-item {{item.id === currentCampus.id ? 'active' : ''}}"
           data-id="{{item.id}}"
           bindtap="selectCampus"

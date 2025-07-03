@@ -2,6 +2,7 @@
 // 获取应用实例
 const app = getApp()
 const auth = require('../../utils/auth.js')
+const campusCache = require('../../utils/campus-cache.js')
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
 
 Component({
@@ -16,17 +17,12 @@ Component({
     canIUseNicknameComp: wx.canIUse('input.type.nickname'),
     // 校区相关
     currentCampus: {
-      id: 1,
-      name: '总校区'
+      id: null,
+      name: '请选择校区'
     },
-    campusList: [
-      { id: 1, name: '总校区' },
-      { id: 2, name: '东城校区' },
-      { id: 3, name: '西城校区' },
-      { id: 4, name: '南城校区' },
-      { id: 5, name: '北城校区' }
-    ],
+    campusList: [],
     showCampusSelector: false,
+    campusDataLoaded: false, // 标记校区数据是否已加载
     
     // 统计数据
     stats: {
@@ -84,7 +80,7 @@ Component({
     currentDate: '',
   },
   pageLifetimes: {
-    show: function() {
+    show: async function() {
       // 检查登录状态
       if (!auth.checkLoginAndRedirect()) {
         return;
@@ -94,6 +90,15 @@ Component({
         this.getTabBar().setData({
           selected: 0
         });
+      }
+
+      // 只在首次显示时加载校区数据
+      if (!this.data.campusDataLoaded) {
+        try {
+          await this.loadCampusListDirectly();
+        } catch (error) {
+          console.error('校区数据加载失败', error);
+        }
       }
     }
   },
@@ -135,6 +140,11 @@ Component({
     },
     // 校区选择相关
     showCampusSelector() {
+      // 如果校区列表为空且未加载过，直接从API加载
+      if ((!this.data.campusList || this.data.campusList.length === 0) && !this.data.campusDataLoaded) {
+        this.loadCampusListDirectly();
+      }
+
       this.setData({
         showCampusSelector: true
       });
@@ -149,18 +159,18 @@ Component({
     selectCampus(e) {
       const campusId = e.currentTarget.dataset.id;
       const campus = this.data.campusList.find(item => item.id === campusId);
-      
+
       if (campus) {
         this.setData({
           currentCampus: campus,
           showCampusSelector: false
         });
-        
+
         // 切换校区后重新加载数据
         this.loadCampusData(campusId);
       }
     },
-    
+
     // 加载校区数据
     loadCampusData(campusId) {
       wx.showLoading({
@@ -246,9 +256,125 @@ Component({
     
     // 生命周期函数
     attached() {
-      // 组件加载时获取初始数据
-      this.loadCampusData(this.data.currentCampus.id);
+      // 检查登录状态
+      if (!auth.checkLoginAndRedirect()) {
+        return;
+      }
+
       this.setCurrentDate();
+    },
+
+    // 直接从API加载校区列表数据
+    async loadCampusListDirectly() {
+      // 如果已经加载过校区数据，直接返回
+      if (this.data.campusDataLoaded) {
+        return;
+      }
+
+      this.setData({
+        campusDataLoaded: true
+      });
+
+      try {
+        // 直接调用API获取校区列表
+        const api = require('../../utils/api.js');
+        const response = await api.getCampusList(1, 100); // 获取所有校区
+
+        if (response.code === 200) {
+          const campusList = response.data.list || [];
+
+          // 更新校区列表
+          this.setData({
+            campusList: campusList
+          });
+
+          // 同时更新缓存
+          if (campusList.length > 0) {
+            wx.setStorageSync('campusCache', {
+              data: campusList,
+              timestamp: Date.now()
+            });
+          }
+
+          // 选择合适的校区
+          this.selectAppropiateCampus(campusList);
+        } else {
+          // API返回错误，重置标记以允许重试
+          this.setData({
+            campusDataLoaded: false
+          });
+          wx.showToast({
+            title: response.message || '获取校区列表失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        // 网络错误，重置标记以允许重试
+        this.setData({
+          campusDataLoaded: false
+        });
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      }
+    },
+
+    // 选择合适的校区
+    selectAppropiateCampus(campusList) {
+      if (!campusList || campusList.length === 0) {
+        return;
+      }
+
+      const currentUser = auth.getCurrentUser();
+      let selectedCampus = null;
+
+      // 如果用户有指定校区，尝试找到对应的校区
+      if (currentUser && currentUser.campusId) {
+        selectedCampus = campusList.find(c => c.id === currentUser.campusId);
+      }
+
+      // 如果没有找到用户指定校区，选择第一个
+      if (!selectedCampus) {
+        selectedCampus = campusList[0];
+      }
+
+      // 更新当前校区
+      this.setData({
+        currentCampus: selectedCampus
+      });
+
+      // 加载校区相关数据
+      if (selectedCampus && selectedCampus.id) {
+        this.loadCampusData(selectedCampus.id);
+      }
+    },
+
+    // 加载校区列表数据（从缓存，备用方法）
+    async loadCampusListData() {
+      // 如果已经加载过，直接返回
+      if (this.data.campusDataLoaded) {
+        return;
+      }
+
+      try {
+        const campusList = await campusCache.getCampusList();
+
+        if (campusList && campusList.length > 0) {
+          this.setData({
+            campusList: campusList,
+            campusDataLoaded: true
+          });
+
+          this.selectAppropiateCampus(campusList);
+        } else {
+          // 如果缓存为空，直接从API加载
+          await this.loadCampusListDirectly();
+        }
+      } catch (error) {
+        // 缓存失败时直接从API加载
+        await this.loadCampusListDirectly();
+      }
     },
     setCurrentDate() {
       const now = new Date();
