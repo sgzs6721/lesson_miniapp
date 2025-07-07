@@ -1,39 +1,80 @@
-const app = getApp()
+// course.js
+const api = require('../../utils/api.js');
+const auth = require('../../utils/auth.js');
+const campusCache = require('../../utils/campus-cache.js');
 
 Page({
   data: {
     activeTab: 'course',
     searchKey: '',
     courseList: [],
-    weekDays: [],
-    timeSlots: [],
-    weekRange: '',
+    loading: false,
+
+    // 分页相关
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    hasMore: true,
+
+    // 校区相关
+    selectedCampusId: null,
+
+    // 弹窗相关
     showCourseModal: false,
     showDetailModal: false,
     editingCourse: null,
     currentCourse: null,
+
+    // 表单数据
     courseForm: {
       name: '',
-      teacherIndex: 0,
-      teacherName: '',
+      typeId: null,
       typeIndex: 0,
-      type: '',
-      levelIndex: 0,
-      level: '',
-      duration: '',
-      maxStudents: '',
+      status: 'PUBLISHED',
+      statusIndex: 0,
+      coachIds: [],
+      coachIndexes: [],
+      unitHours: '1.0',
+      price: '100',
+      coachFee: '50',
       description: ''
     },
-    teacherList: [],
-    courseTypes: ['常规课', '体验课', '补课', '试听课'],
-    courseLevels: ['入门', '初级', '中级', '高级']
+
+    // 选项数据
+    coachList: [], // 简单教练列表
+    courseTypes: [], // 课程类型
+    statusOptions: ['已发布', '已暂停', '已终止'],
+    statusValues: ['PUBLISHED', 'SUSPENDED', 'TERMINATED'],
+
+    // 多选教练相关
+    showCoachSelector: false,
+    selectedCoaches: [],
+
+    // 课表相关（保留原有功能）
+    weekDays: [],
+    timeSlots: [],
+    weekRange: ''
   },
 
-  onLoad() {
-    this.initTimeSlots()
-    this.loadTeacherList()
-    this.loadCourseList()
-    this.initWeekDays()
+  async onLoad() {
+    // 检查登录状态
+    if (!auth.checkLoginAndRedirect()) {
+      return;
+    }
+
+    // 获取当前校区
+    this.initCurrentCampus();
+
+    // 并行加载数据
+    await Promise.all([
+      this.loadCoachList(),
+      this.loadCourseTypes(),
+      this.loadCourseList()
+    ]);
+
+    // 初始化课表相关
+    this.initTimeSlots();
+    this.initWeekDays();
   },
 
   onShow() {
@@ -45,6 +86,121 @@ Page({
     }
   },
 
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.loadCourseList(true);
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadCourseList();
+    }
+  },
+
+  // 初始化当前校区
+  initCurrentCampus() {
+    const currentCampus = campusCache.getCurrentCampus();
+    if (currentCampus) {
+      this.setData({
+        selectedCampusId: currentCampus.id
+      });
+    }
+  },
+
+  // 加载教练列表
+  async loadCoachList() {
+    if (!this.data.selectedCampusId) {
+      return;
+    }
+
+    try {
+      const response = await api.getSimpleCoachList(this.data.selectedCampusId);
+      if (response.code === 200) {
+        // 初始化每个教练的checked状态
+        const coachList = (response.data || []).map(coach => ({
+          ...coach,
+          checked: false
+        }));
+
+        this.setData({
+          coachList: coachList
+        });
+      } else {
+        console.error('Load coach list error:', response.message);
+      }
+    } catch (error) {
+      console.error('Load coach list error:', error);
+    }
+  },
+
+  // 加载课程类型
+  async loadCourseTypes() {
+    try {
+      const response = await api.getConstantsList('COURSE_TYPE');
+      if (response.code === 200) {
+        this.setData({
+          courseTypes: response.data || []
+        });
+      } else {
+        console.error('Load course types error:', response.message);
+      }
+    } catch (error) {
+      console.error('Load course types error:', error);
+    }
+  },
+
+  // 加载课程列表
+  async loadCourseList(refresh = false) {
+    if (!this.data.selectedCampusId) {
+      return;
+    }
+
+    if (refresh) {
+      this.setData({
+        page: 1,
+        courseList: [],
+        hasMore: true
+      });
+    }
+
+    this.setData({ loading: true });
+
+    try {
+      const response = await api.getCourseList(
+        this.data.page,
+        this.data.pageSize,
+        this.data.selectedCampusId
+      );
+
+      if (response.code === 200) {
+        const { data } = response;
+        const newList = refresh ? data.list : [...this.data.courseList, ...data.list];
+
+        this.setData({
+          courseList: newList,
+          total: data.total,
+          page: this.data.page + 1,
+          hasMore: data.list.length === this.data.pageSize && newList.length < data.total
+        });
+      } else {
+        wx.showToast({
+          title: response.message || '获取课程列表失败',
+          icon: 'none'
+        });
+      }
+    } catch (error) {
+      console.error('Load course list error:', error);
+      wx.showToast({
+        title: '网络错误，请重试',
+        icon: 'none'
+      });
+    } finally {
+      this.setData({ loading: false });
+      wx.stopPullDownRefresh();
+    }
+  },
+
   // 初始化时间槽
   initTimeSlots() {
     const slots = []
@@ -52,47 +208,6 @@ Page({
       slots.push(`${hour.toString().padStart(2, '0')}:00`)
     }
     this.setData({ timeSlots: slots })
-  },
-
-  // 加载教师列表
-  loadTeacherList() {
-    // TODO: 从服务器获取教师列表
-    const teacherList = [
-      { id: 1, name: '张老师' },
-      { id: 2, name: '李老师' },
-      { id: 3, name: '王老师' }
-    ]
-    this.setData({ teacherList })
-  },
-
-  // 加载课程列表
-  loadCourseList() {
-    // TODO: 从服务器获取课程列表
-    const courseList = [
-      {
-        id: 1,
-        name: '少儿英语启蒙',
-        teacherName: '张老师',
-        type: '常规课',
-        level: '入门',
-        duration: 45,
-        studentCount: 8,
-        maxStudents: 12,
-        description: '适合3-6岁儿童的英语启蒙课程'
-      },
-      {
-        id: 2,
-        name: '少儿英语进阶',
-        teacherName: '李老师',
-        type: '常规课',
-        level: '初级',
-        duration: 60,
-        studentCount: 10,
-        maxStudents: 15,
-        description: '适合6-9岁儿童的英语进阶课程'
-      }
-    ]
-    this.setData({ courseList })
   },
 
   // 初始化周数据
@@ -152,27 +267,44 @@ Page({
   // 搜索课程
   onSearch(e) {
     const searchKey = e.detail.value
-    this.setData({ searchKey })
-    // TODO: 实现搜索逻辑
+    this.setData({
+      searchKey,
+      page: 1,
+      courseList: [],
+      hasMore: true
+    })
+    this.loadCourseList(true)
   },
 
   // 显示添加课程弹窗
   showAddCourse() {
+    // 重置所有教练的选中状态
+    const coachList = this.data.coachList.map(coach => ({
+      ...coach,
+      checked: false
+    }));
+
+    // 获取默认课程类型（第一个）
+    const defaultTypeId = this.data.courseTypes.length > 0 ? this.data.courseTypes[0].id : null;
+
     this.setData({
       showCourseModal: true,
       editingCourse: null,
+      coachList: coachList,
       courseForm: {
         name: '',
-        teacherIndex: 0,
-        teacherName: '',
+        typeId: defaultTypeId,
         typeIndex: 0,
-        type: '',
-        levelIndex: 0,
-        level: '',
-        duration: '',
-        maxStudents: '',
+        status: 'PUBLISHED',
+        statusIndex: 0,
+        coachIds: [],
+        coachIndexes: [],
+        unitHours: '1.0',
+        price: '100',
+        coachFee: '50',
         description: ''
-      }
+      },
+      selectedCoaches: []
     })
   },
 
@@ -181,24 +313,43 @@ Page({
     const courseId = e.currentTarget.dataset.id
     const course = this.data.courseList.find(c => c.id === courseId)
     if (course) {
-      const teacherIndex = this.data.teacherList.findIndex(t => t.name === course.teacherName)
-      const typeIndex = this.data.courseTypes.indexOf(course.type)
-      const levelIndex = this.data.courseLevels.indexOf(course.level)
+      // 找到课程类型索引
+      const typeIndex = this.data.courseTypes.findIndex(t => t.constantValue === course.type)
+
+      // 找到状态索引
+      const statusIndex = this.data.statusValues.indexOf(course.status)
+
+      // 处理教练选择
+      const selectedCoaches = course.coaches || []
+      const coachIds = selectedCoaches.map(c => c.id)
+      const coachIndexes = selectedCoaches.map(selectedCoach => {
+        return this.data.coachList.findIndex(c => c.id === selectedCoach.id)
+      }).filter(index => index !== -1)
+
+      // 更新教练列表的checked状态
+      const coachList = this.data.coachList.map(coach => ({
+        ...coach,
+        checked: coachIds.indexOf(coach.id) !== -1
+      }));
+
       this.setData({
         showCourseModal: true,
         editingCourse: course,
+        coachList: coachList,
         courseForm: {
           name: course.name,
-          teacherIndex: teacherIndex >= 0 ? teacherIndex : 0,
-          teacherName: course.teacherName,
-          typeIndex: typeIndex >= 0 ? typeIndex : 0,
-          type: course.type,
-          levelIndex: levelIndex >= 0 ? levelIndex : 0,
-          level: course.level,
-          duration: course.duration.toString(),
-          maxStudents: course.maxStudents.toString(),
-          description: course.description
-        }
+          typeId: typeIndex !== -1 ? this.data.courseTypes[typeIndex].id : null,
+          typeIndex: typeIndex !== -1 ? typeIndex : 0,
+          status: course.status,
+          statusIndex: statusIndex !== -1 ? statusIndex : 0,
+          coachIds: coachIds,
+          coachIndexes: coachIndexes,
+          unitHours: course.unitHours ? course.unitHours.toString() : '1.0',
+          price: course.price ? course.price.toString() : '100',
+          coachFee: course.coachFee ? course.coachFee.toString() : '50',
+          description: course.description || ''
+        },
+        selectedCoaches: selectedCoaches
       })
     }
   },
@@ -208,9 +359,17 @@ Page({
     const courseId = e.currentTarget.dataset.id
     const course = this.data.courseList.find(c => c.id === courseId)
     if (course) {
+      // 处理教练名称显示
+      const coachNames = course.coaches ? course.coaches.map(coach => coach.name).join('、') : '无';
+
+      const courseWithNames = {
+        ...course,
+        coachNames: coachNames
+      };
+
       this.setData({
         showDetailModal: true,
-        currentCourse: course
+        currentCourse: courseWithNames
       })
     }
   },
@@ -242,15 +401,36 @@ Page({
     wx.showModal({
       title: '确认删除',
       content: '确定要删除该课程吗？',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          // TODO: 调用删除课程接口
-          const courseList = this.data.courseList.filter(c => c.id !== courseId)
-          this.setData({ courseList })
-          wx.showToast({
-            title: '删除成功',
-            icon: 'success'
+          wx.showLoading({
+            title: '删除中...'
           })
+
+          try {
+            const response = await api.deleteCourse(courseId)
+            wx.hideLoading()
+
+            if (response.code === 200) {
+              wx.showToast({
+                title: '删除成功',
+                icon: 'success'
+              })
+              this.loadCourseList(true)
+            } else {
+              wx.showToast({
+                title: response.message || '删除失败',
+                icon: 'none'
+              })
+            }
+          } catch (error) {
+            wx.hideLoading()
+            console.error('Delete course error:', error)
+            wx.showToast({
+              title: '网络错误，请重试',
+              icon: 'none'
+            })
+          }
         }
       }
     })
@@ -258,7 +438,10 @@ Page({
 
   // 隐藏课程弹窗
   hideCourseModal() {
-    this.setData({ showCourseModal: false })
+    this.setData({
+      showCourseModal: false,
+      showCoachSelector: false
+    })
   },
 
   // 隐藏详情弹窗
@@ -275,110 +458,185 @@ Page({
     })
   },
 
-  // 选择教师
-  onTeacherChange(e) {
-    const index = e.detail.value
-    const teacher = this.data.teacherList[index]
-    this.setData({
-      'courseForm.teacherIndex': index,
-      'courseForm.teacherName': teacher.name
-    })
-  },
-
   // 选择课程类型
   onTypeChange(e) {
     const index = e.detail.value
+    const courseType = this.data.courseTypes[index]
     this.setData({
       'courseForm.typeIndex': index,
-      'courseForm.type': this.data.courseTypes[index]
+      'courseForm.typeId': courseType.id
     })
   },
 
-  // 选择课程级别
-  onLevelChange(e) {
+  // 选择课程状态
+  onStatusChange(e) {
     const index = e.detail.value
     this.setData({
-      'courseForm.levelIndex': index,
-      'courseForm.level': this.data.courseLevels[index]
+      'courseForm.statusIndex': index,
+      'courseForm.status': this.data.statusValues[index]
+    })
+  },
+
+  // 显示教练选择器
+  showCoachSelector() {
+    this.setData({
+      showCoachSelector: true
+    })
+  },
+
+  // 隐藏教练选择器
+  hideCoachSelector() {
+    this.setData({
+      showCoachSelector: false
+    })
+  },
+
+  // 教练选择变化 (按官方文档模式)
+  onCoachChange(e) {
+    const coachList = [...this.data.coachList] // Create a new array to avoid mutation
+    const selectedValues = e.detail.value
+
+    // 按照官方示例更新checked状态
+    for (let i = 0, lenI = coachList.length; i < lenI; ++i) {
+      coachList[i] = {...coachList[i]} // Create new object to ensure reactivity
+      coachList[i].checked = false
+
+      for (let j = 0, lenJ = selectedValues.length; j < lenJ; ++j) {
+        // Convert both to string for comparison (checkbox values are always strings)
+        if (coachList[i].id.toString() === selectedValues[j]) {
+          coachList[i].checked = true
+          break
+        }
+      }
+    }
+
+    // 获取选中的教练
+    const selectedCoaches = coachList.filter(coach => coach.checked)
+    const coachIds = selectedCoaches.map(coach => coach.id)
+    const coachIndexes = selectedCoaches.map(coach => {
+      return coachList.findIndex(c => c.id === coach.id)
+    })
+
+    // 更新表单数据
+    const updatedForm = {
+      ...this.data.courseForm,
+      coachIds: coachIds,
+      coachIndexes: coachIndexes
+    }
+
+    this.setData({
+      coachList: coachList,
+      courseForm: updatedForm,
+      selectedCoaches: selectedCoaches
     })
   },
 
   // 保存课程
-  saveCourse() {
+  async saveCourse() {
     const { courseForm, editingCourse } = this.data
-    if (!courseForm.name) {
+
+    // 表单验证
+    if (!courseForm.name.trim()) {
       wx.showToast({
         title: '请输入课程名称',
         icon: 'none'
       })
       return
     }
-    if (!courseForm.teacherName) {
-      wx.showToast({
-        title: '请选择授课老师',
-        icon: 'none'
-      })
-      return
-    }
-    if (!courseForm.type) {
+
+    if (!courseForm.typeId) {
       wx.showToast({
         title: '请选择课程类型',
         icon: 'none'
       })
       return
     }
-    if (!courseForm.level) {
+
+    if (courseForm.coachIds.length === 0) {
       wx.showToast({
-        title: '请选择课程级别',
-        icon: 'none'
-      })
-      return
-    }
-    if (!courseForm.duration) {
-      wx.showToast({
-        title: '请输入课程时长',
-        icon: 'none'
-      })
-      return
-    }
-    if (!courseForm.maxStudents) {
-      wx.showToast({
-        title: '请输入最大人数',
+        title: '请选择上课教练',
         icon: 'none'
       })
       return
     }
 
-    // TODO: 调用保存课程接口
-    const course = {
-      id: editingCourse ? editingCourse.id : Math.random().toString(36).substr(2, 9),
-      name: courseForm.name,
-      teacherName: courseForm.teacherName,
-      type: courseForm.type,
-      level: courseForm.level,
-      duration: parseInt(courseForm.duration),
-      maxStudents: parseInt(courseForm.maxStudents),
-      studentCount: editingCourse ? editingCourse.studentCount : 0,
-      description: courseForm.description
+    if (!courseForm.unitHours || isNaN(courseForm.unitHours) || parseFloat(courseForm.unitHours) <= 0) {
+      wx.showToast({
+        title: '请输入正确的每次消耗课时',
+        icon: 'none'
+      })
+      return
     }
 
-    let courseList = [...this.data.courseList]
+    if (!courseForm.price || isNaN(courseForm.price) || parseFloat(courseForm.price) <= 0) {
+      wx.showToast({
+        title: '请输入正确的课程单价',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!courseForm.coachFee || isNaN(courseForm.coachFee) || parseFloat(courseForm.coachFee) <= 0) {
+      wx.showToast({
+        title: '请输入正确的教练课时费',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 构造课程数据
+    const courseData = {
+      name: courseForm.name.trim(),
+      typeId: courseForm.typeId,
+      status: courseForm.status === 'PUBLISHED' ? '1' : courseForm.status, // API bug workaround
+      coachIds: courseForm.coachIds,
+      unitHours: parseFloat(courseForm.unitHours),
+      price: parseFloat(courseForm.price),
+      coachFee: parseFloat(courseForm.coachFee),
+      description: courseForm.description.trim(),
+      campusId: this.data.selectedCampusId
+    }
+
+    // 编辑模式需要添加ID
     if (editingCourse) {
-      const index = courseList.findIndex(c => c.id === course.id)
-      courseList[index] = course
-    } else {
-      courseList.unshift(course)
+      courseData.id = editingCourse.id
     }
 
-    this.setData({
-      courseList,
-      showCourseModal: false
+    wx.showLoading({
+      title: editingCourse ? '更新中...' : '创建中...'
     })
 
-    wx.showToast({
-      title: editingCourse ? '编辑成功' : '添加成功',
-      icon: 'success'
-    })
+    try {
+      let response
+      if (editingCourse) {
+        response = await api.updateCourse(courseData)
+      } else {
+        response = await api.createCourse(courseData)
+      }
+
+      wx.hideLoading()
+
+      if (response.code === 200) {
+        this.hideCourseModal()
+        wx.showToast({
+          title: editingCourse ? '更新成功' : '创建成功',
+          icon: 'success'
+        })
+        this.loadCourseList(true)
+      } else {
+        wx.showToast({
+          title: response.message || '操作失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('Save course error:', error)
+      wx.showToast({
+        title: '网络错误，请重试',
+        icon: 'none'
+      })
+    }
   },
 
   // 上一周

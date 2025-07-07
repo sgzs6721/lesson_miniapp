@@ -282,6 +282,84 @@ function deleteCoach(coachId) {
   });
 }
 
+/**
+ * 获取简单教练列表
+ * @param {number} campusId 校区ID
+ */
+function getSimpleCoachList(campusId) {
+  return request({
+    url: `/coach/simple/list?campusId=${campusId}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取课程列表
+ * @param {number} page 页码，默认1
+ * @param {number} pageSize 每页数量，默认10
+ * @param {number} campusId 校区ID
+ * @param {string} sortField 排序字段，默认createdTime
+ * @param {string} sortOrder 排序方向，默认desc
+ */
+function getCourseList(page = 1, pageSize = 10, campusId, sortField = 'createdTime', sortOrder = 'desc') {
+  return request({
+    url: `/courses/list?page=${page}&pageSize=${pageSize}&sortField=${sortField}&sortOrder=${sortOrder}&campusId=${campusId}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取常量列表
+ * @param {string} type 常量类型
+ */
+function getConstantsList(type) {
+  return request({
+    url: `/constants/list?type=${type}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 创建课程
+ * @param {Object} courseData 课程数据
+ */
+function createCourse(courseData) {
+  return request({
+    url: '/courses/create',
+    method: 'POST',
+    data: courseData,
+    needAuth: true
+  });
+}
+
+/**
+ * 更新课程
+ * @param {Object} courseData 课程数据
+ */
+function updateCourse(courseData) {
+  return request({
+    url: '/courses/update',
+    method: 'POST',
+    data: courseData,
+    needAuth: true
+  });
+}
+
+/**
+ * 删除课程
+ * @param {string} courseId 课程ID
+ */
+function deleteCourse(courseId) {
+  return request({
+    url: `/courses/delete?id=${courseId}`,
+    method: 'POST',
+    needAuth: true
+  });
+}
+
 module.exports = {
   request,
   login,
@@ -300,5 +378,11 @@ module.exports = {
   getCoachDetail,
   createCoach,
   updateCoach,
-  deleteCoach
+  deleteCoach,
+  getSimpleCoachList,
+  getCourseList,
+  getConstantsList,
+  createCourse,
+  updateCourse,
+  deleteCourse
 };

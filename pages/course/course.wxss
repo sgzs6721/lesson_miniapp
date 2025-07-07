@@ -118,7 +118,9 @@ page {
 /* 课程列表 */
 .course-list {
   flex: 1;
-  padding: 0 20rpx;
+  padding: 0 20rpx 160rpx 20rpx;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .course-item {
@@ -151,11 +153,52 @@ page {
   margin-left: 10rpx;
 }
 
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
 .course-name {
   font-size: 32rpx;
   font-weight: 500;
   color: var(--text-color);
-  margin-bottom: 12rpx;
+  flex: 1;
+}
+
+.course-status {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.status-PUBLISHED {
+  background-color: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+}
+
+.status-SUSPENDED {
+  background-color: rgba(255, 149, 0, 0.1);
+  color: #ff9500;
+}
+
+.status-TERMINATED {
+  background-color: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+}
+
+.course-coaches {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  margin-top: 8rpx;
+}
+
+.course-update-time {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 6rpx;
 }
 
 .course-detail {
@@ -361,9 +404,10 @@ page {
 }
 
 .modal-body {
-  max-height: 60vh;
+  max-height: 50vh;
   overflow-y: auto;
   padding: 30rpx;
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom) + 48px);
 }
 
 .form-item {
@@ -386,6 +430,74 @@ page {
   padding: 0 20rpx;
   font-size: 28rpx;
   color: #333;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+/* 教练选择器 */
+.coach-selector {
+  width: 100%;
+  min-height: 80rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  padding: 15rpx 20rpx;
+  font-size: 28rpx;
+  color: #333;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 1.2;
+}
+
+.coach-content {
+  flex: 1;
+  margin-right: 10rpx;
+}
+
+.coach-list {
+  display: block;
+  line-height: 1.4;
+}
+
+.coach-name {
+  display: inline;
+  margin-right: 8rpx;
+}
+
+.coach-selector .placeholder {
+  color: #999;
+}
+
+.coach-selector .arrow {
+  color: #999;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
+/* 教练选择弹窗 */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  min-height: 80rpx;
+}
+
+.checkbox-item:last-child {
+  border-bottom: none;
+}
+
+.checkbox-item checkbox {
+  margin-right: 20rpx;
+  transform: scale(1.2);
+}
+
+.checkbox-item text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.4;
 }
 
 .form-item textarea {
@@ -396,12 +508,15 @@ page {
   padding: 20rpx;
   font-size: 28rpx;
   color: #333;
+  box-sizing: border-box;
 }
 
 .modal-footer {
   display: flex;
   padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom) + 48px);
   border-top: 1rpx solid #eee;
+  background-color: #fff;
 }
 
 .modal-footer .btn {
@@ -412,6 +527,8 @@ page {
   border-radius: 40rpx;
   font-size: 28rpx;
   margin: 0 10rpx;
+  border: none;
+  outline: none;
 }
 
 .btn.cancel {
@@ -424,26 +541,55 @@ page {
   color: #fff;
 }
 
-/* 课程详情 */
+.modal-footer .btn::after {
+  border: none;
+}
+
+/* 移除重复的详情样式，使用下面统一的样式 */
+
+/* 空状态和加载状态 */
+.empty-tip, .loading-tip {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.loading-more, .no-more {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* 详情样式 */
 .detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20rpx;
+  padding: 15rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
 }
 
 .detail-item .label {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 8rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+  line-height: 1.5;
+  padding-top: 2rpx;
 }
 
 .detail-item .value {
   font-size: 28rpx;
   color: #333;
-}
-
-/* 空状态 */
-.empty-tip {
-  text-align: center;
-  padding: 100rpx 0;
-  color: #999;
-  font-size: 28rpx;
+  text-align: right;
+  flex: 1;
+  word-break: break-all;
+  line-height: 1.4;
 }

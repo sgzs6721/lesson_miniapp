@@ -17,22 +17,34 @@
     </view>
     <button class="add-btn" bindtap="showAddCourse">添加</button>
   </view>
-  
+
     <scroll-view class="course-list" scroll-y>
-      <view wx:if="{{courseList.length === 0}}" class="empty-tip">暂无课程</view>
+      <view wx:if="{{loading && courseList.length === 0}}" class="loading-tip">加载中...</view>
+      <view wx:elif="{{courseList.length === 0}}" class="empty-tip">暂无课程</view>
+
       <view wx:for="{{courseList}}" wx:key="id" class="course-item">
         <view class="course-info" bindtap="showCourseDetail" data-id="{{item.id}}">
-          <view class="course-name">{{item.name}}</view>
-          <view class="course-detail">
-            <text>{{item.teacherName}}</text>
-            <text class="dot">·</text>
-            <text>{{item.studentCount}}人</text>
-            <text class="dot">·</text>
-            <text>{{item.duration}}分钟</text>
+          <view class="course-header">
+            <view class="course-name">{{item.name}}</view>
+            <view class="course-status status-{{item.status}}">
+              {{item.status === 'PUBLISHED' ? '已发布' : (item.status === 'SUSPENDED' ? '已暂停' : '已终止')}}
+            </view>
           </view>
-          <view class="course-tags">
-            <text class="tag" wx:if="{{item.type}}">{{item.type}}</text>
-            <text class="tag" wx:if="{{item.level}}">{{item.level}}</text>
+          <view class="course-detail">
+            <text>{{item.type}}</text>
+            <text class="dot"> · </text>
+            <text>¥{{item.price}}</text>
+            <text class="dot"> · </text>
+            <text>总课时{{item.totalHours || 0}}</text>
+            <text class="dot"> · </text>
+            <text>已销{{item.consumedHours || 0}}</text>
+          </view>
+          <view class="course-coaches">
+            <text>教练：</text>
+            <text wx:for="{{item.coaches}}" wx:key="id" wx:for-item="coach">{{coach.name}}{{index < item.coaches.length - 1 ? '、' : ''}}</text>
+          </view>
+          <view class="course-update-time">
+            <text>更新时间：{{item.updateTime || item.createdTime}}</text>
           </view>
         </view>
         <view class="course-actions">
@@ -40,6 +52,10 @@
           <view class="action-btn delete" bindtap="deleteCourse" data-id="{{item.id}}">删除</view>
         </view>
       </view>
+
+      <!-- 加载更多提示 -->
+      <view wx:if="{{loading && courseList.length > 0}}" class="loading-more">加载中...</view>
+      <view wx:elif="{{!hasMore && courseList.length > 0}}" class="no-more">没有更多了</view>
     </scroll-view>
   </view>
 
@@ -72,9 +88,9 @@
           <view class="day-header">{{day.name}}</view>
           <view class="day-slots">
             <view wx:for="{{timeSlots}}" wx:key="index" class="time-slot">
-              <view 
-                wx:for="{{day.courses}}" 
-                wx:key="id" 
+              <view
+                wx:for="{{day.courses}}"
+                wx:key="id"
                 wx:for-item="course"
                 class="course-block {{course.timeSlot === item ? 'show' : ''}}"
                 style="height: {{course.duration / 30 * 100}}rpx;"
@@ -106,45 +122,78 @@
           <input type="text" placeholder="请输入课程名称" value="{{courseForm.name}}" bindinput="onCourseFormInput" data-field="name" />
         </view>
         <view class="form-item">
-          <text class="label">授课老师</text>
-          <picker mode="selector" range="{{teacherList}}" range-key="name" value="{{courseForm.teacherIndex}}" bindchange="onTeacherChange">
-            <view class="picker">
-              {{courseForm.teacherName || '请选择授课老师'}}
-            </view>
-          </picker>
-        </view>
-        <view class="form-item">
           <text class="label">课程类型</text>
-          <picker mode="selector" range="{{courseTypes}}" value="{{courseForm.typeIndex}}" bindchange="onTypeChange">
+          <picker mode="selector" range="{{courseTypes}}" range-key="constantValue" value="{{courseForm.typeIndex}}" bindchange="onTypeChange">
             <view class="picker">
-              {{courseForm.type || '请选择课程类型'}}
+              {{courseTypes[courseForm.typeIndex].constantValue || '请选择课程类型'}}
             </view>
           </picker>
         </view>
         <view class="form-item">
-          <text class="label">课程级别</text>
-          <picker mode="selector" range="{{courseLevels}}" value="{{courseForm.levelIndex}}" bindchange="onLevelChange">
+          <text class="label">课程状态</text>
+          <picker mode="selector" range="{{statusOptions}}" value="{{courseForm.statusIndex}}" bindchange="onStatusChange">
             <view class="picker">
-              {{courseForm.level || '请选择课程级别'}}
+              {{statusOptions[courseForm.statusIndex] || '请选择课程状态'}}
             </view>
           </picker>
         </view>
         <view class="form-item">
-          <text class="label">课程时长</text>
-          <input type="number" placeholder="请输入课程时长（分钟）" value="{{courseForm.duration}}" bindinput="onCourseFormInput" data-field="duration" />
+          <text class="label">上课教练</text>
+          <view class="coach-selector" bindtap="showCoachSelector">
+            <view class="coach-content">
+              <text wx:if="{{selectedCoaches.length === 0}}" class="placeholder">请选择上课教练</text>
+              <view wx:else class="coach-list">
+                <text wx:for="{{selectedCoaches}}" wx:key="id" class="coach-name">
+                  {{item.name}}{{index < selectedCoaches.length - 1 ? ' ' : ''}}
+                </text>
+              </view>
+            </view>
+            <text class="arrow">▼</text>
+          </view>
         </view>
         <view class="form-item">
-          <text class="label">最大人数</text>
-          <input type="number" placeholder="请输入最大人数" value="{{courseForm.maxStudents}}" bindinput="onCourseFormInput" data-field="maxStudents" />
+          <text class="label">每次消耗课时</text>
+          <input type="digit" placeholder="默认值：1.0" value="{{courseForm.unitHours}}" bindinput="onCourseFormInput" data-field="unitHours" />
         </view>
         <view class="form-item">
-          <text class="label">课程说明</text>
-          <textarea placeholder="请输入课程说明" value="{{courseForm.description}}" bindinput="onCourseFormInput" data-field="description" />
+          <text class="label">课程单价</text>
+          <input type="digit" placeholder="默认值：100，单位：元" value="{{courseForm.price}}" bindinput="onCourseFormInput" data-field="price" />
+        </view>
+        <view class="form-item">
+          <text class="label">教练课时费</text>
+          <input type="digit" placeholder="默认值：50，单位：元" value="{{courseForm.coachFee}}" bindinput="onCourseFormInput" data-field="coachFee" />
+        </view>
+        <view class="form-item">
+          <text class="label">课程描述</text>
+          <textarea placeholder="选填" value="{{courseForm.description}}" bindinput="onCourseFormInput" data-field="description" />
         </view>
       </view>
       <view class="modal-footer">
         <button class="btn cancel" bindtap="hideCourseModal">取消</button>
         <button class="btn confirm" bindtap="saveCourse">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 教练选择弹窗 -->
+  <view class="modal {{showCoachSelector ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCoachSelector"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>选择教练</text>
+        <view class="modal-close" bindtap="hideCoachSelector">×</view>
+      </view>
+      <view class="modal-body">
+        <checkbox-group bindchange="onCoachChange">
+          <view wx:for="{{coachList}}" wx:key="id" class="checkbox-item">
+            <checkbox value="{{item.id}}" checked="{{item.checked}}"/>
+            <text>{{item.name}}</text>
+          </view>
+        </checkbox-group>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCoachSelector">取消</button>
+        <button class="btn confirm" bindtap="hideCoachSelector">确定</button>
       </view>
     </view>
   </view>
@@ -159,32 +208,52 @@
       </view>
       <view class="modal-body">
         <view class="detail-item">
-          <text class="label">课程名称</text>
+          <text class="label">课程名称：</text>
           <text class="value">{{currentCourse.name}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">授课老师</text>
-          <text class="value">{{currentCourse.teacherName}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">课程类型</text>
+          <text class="label">课程类型：</text>
           <text class="value">{{currentCourse.type}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">课程级别</text>
-          <text class="value">{{currentCourse.level}}</text>
+          <text class="label">课程状态：</text>
+          <text class="value">{{currentCourse.status === 'PUBLISHED' ? '已发布' : (currentCourse.status === 'SUSPENDED' ? '已暂停' : '已终止')}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">课程时长</text>
-          <text class="value">{{currentCourse.duration}}分钟</text>
+          <text class="label">上课教练：</text>
+          <text class="value">{{currentCourse.coachNames}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">当前人数</text>
-          <text class="value">{{currentCourse.studentCount}}/{{currentCourse.maxStudents}}人</text>
+          <text class="label">每次消耗课时：</text>
+          <text class="value">{{currentCourse.unitHours}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">课程说明</text>
-          <text class="value">{{currentCourse.description}}</text>
+          <text class="label">课程单价：</text>
+          <text class="value">¥{{currentCourse.price}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">教练课时费：</text>
+          <text class="value">¥{{currentCourse.coachFee}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">总课时：</text>
+          <text class="value">{{currentCourse.totalHours}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">已消耗课时：</text>
+          <text class="value">{{currentCourse.consumedHours}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">创建时间：</text>
+          <text class="value">{{currentCourse.createdTime}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">更新时间：</text>
+          <text class="value">{{currentCourse.updateTime}}</text>
+        </view>
+        <view class="detail-item">
+          <text class="label">课程描述：</text>
+          <text class="value">{{currentCourse.description || '无'}}</text>
         </view>
       </view>
       <view class="modal-footer">
