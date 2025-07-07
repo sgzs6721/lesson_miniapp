@@ -18,7 +18,7 @@
     <button class="add-btn" bindtap="showAddCourse">添加</button>
   </view>
 
-    <scroll-view class="course-list" scroll-y>
+    <view class="course-list">
       <view wx:if="{{loading && courseList.length === 0}}" class="loading-tip">加载中...</view>
       <view wx:elif="{{courseList.length === 0}}" class="empty-tip">暂无课程</view>
 
@@ -56,7 +56,7 @@
       <!-- 加载更多提示 -->
       <view wx:if="{{loading && courseList.length > 0}}" class="loading-more">加载中...</view>
       <view wx:elif="{{!hasMore && courseList.length > 0}}" class="no-more">没有更多了</view>
-    </scroll-view>
+    </view>
   </view>
 
   <!-- 本周课表 -->

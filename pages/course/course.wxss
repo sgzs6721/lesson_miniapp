@@ -1,14 +1,11 @@
 /**course.wxss**/
 page {
-  height: 100vh;
   background-color: var(--background-color);
 }
 
 .page {
   width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
 }
 
 /* 标签页 */
@@ -45,8 +42,7 @@ page {
 
 /* 标签内容 */
 .tab-content {
-  flex: 1;
-  overflow: hidden;
+  width: 100%;
 }
 
 /* 搜索和添加课程区域 */
@@ -117,9 +113,7 @@ page {
 
 /* 课程列表 */
 .course-list {
-  flex: 1;
-  padding: 0 20rpx 160rpx 20rpx;
-  height: 100%;
+  padding: 0 20rpx calc(80rpx + env(safe-area-inset-bottom) + 48px) 20rpx;
   box-sizing: border-box;
 }
 
