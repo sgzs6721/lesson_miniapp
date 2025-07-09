@@ -360,6 +360,94 @@ function deleteCourse(courseId) {
   });
 }
 
+/**
+ * 获取简单课程列表（用于学员选择）
+ * @param {string} campusId 校区ID
+ */
+function getSimpleCourseList(campusId) {
+  return request({
+    url: `/courses/simple?campusId=${campusId}`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 获取学员列表
+ * @param {number} pageNum 页码
+ * @param {number} pageSize 每页大小
+ * @param {string} campusId 校区ID
+ */
+function getStudentList(pageNum, pageSize, campusId) {
+  return request({
+    url: `/student/list?campusId=${campusId}&pageNum=${pageNum}&pageSize=${pageSize}&sortField=id&sortOrder=desc`,
+    method: 'GET',
+    needAuth: true
+  });
+}
+
+/**
+ * 创建学员
+ * @param {Object} studentData 学员数据
+ */
+function createStudent(studentData) {
+  return request({
+    url: '/student/create',
+    method: 'POST',
+    data: studentData,
+    needAuth: true
+  });
+}
+
+/**
+ * 更新学员
+ * @param {Object} studentData 学员数据
+ */
+function updateStudent(studentData) {
+  return request({
+    url: '/student/update',
+    method: 'POST',
+    data: studentData,
+    needAuth: true
+  });
+}
+
+/**
+ * 删除学员
+ * @param {string} studentId 学员ID
+ */
+function deleteStudent(studentId) {
+  return request({
+    url: `/student/delete?id=${studentId}`,
+    method: 'POST',
+    needAuth: true
+  });
+}
+
+/**
+ * 学员缴费记录
+ * @param {Object} paymentData 缴费数据
+ */
+function createStudentPayment(paymentData) {
+  return request({
+    url: '/student/payment',
+    method: 'POST',
+    data: paymentData,
+    needAuth: true
+  });
+}
+
+/**
+ * 获取赠品列表
+ */
+function getGiftItems() {
+  return request({
+    url: '/constants/list?type=GIFT_ITEM',
+    method: 'GET',
+    needAuth: true
+  });
+}
+
 module.exports = {
   request,
   login,
@@ -384,5 +472,12 @@ module.exports = {
   getConstantsList,
   createCourse,
   updateCourse,
-  deleteCourse
+  deleteCourse,
+  getSimpleCourseList,
+  getStudentList,
+  createStudent,
+  updateStudent,
+  deleteStudent,
+  createStudentPayment,
+  getGiftItems
 };

@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "学员管理",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50,
   "usingComponents": {}
 }

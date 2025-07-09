@@ -1,48 +1,44 @@
 <!--student.wxml-->
 <view class="page">
-  <!-- 顶部标签页 -->
-  <view class="tabs">
-    <view class="tab {{activeTab === 'info' ? 'active' : ''}}" bindtap="switchTab" data-tab="info">学员信息</view>
-    <view class="tab {{activeTab === 'attendance' ? 'active' : ''}}" bindtap="switchTab" data-tab="attendance">出勤记录</view>
+  <!-- 搜索和添加学员 -->
+  <view class="search-add-container">
+    <view class="search-box">
+      <input type="text" placeholder="搜索学员" bindinput="onSearch" value="{{searchKey}}" />
+      <view class="search-icon">🔍</view>
+    </view>
+    <button class="add-btn" bindtap="showAddStudent">添加</button>
   </view>
 
-  <!-- 学员信息标签页 -->
-  <view class="tab-content" hidden="{{activeTab !== 'info'}}">
-    <!-- 搜索和添加学员 -->
-    <view class="search-add-container">
-      <view class="search-box">
-        <input type="text" placeholder="搜索学员" bindinput="onSearch" value="{{searchKey}}" />
-        <view class="search-icon">🔍</view>
-      </view>
-      <button class="add-btn" bindtap="showAddStudent">添加</button>
-    </view>
+  <!-- 学员列表 -->
+  <view class="student-list">
+    <view wx:if="{{loading && studentList.length === 0}}" class="loading-tip">加载中...</view>
+    <view wx:elif="{{studentList.length === 0}}" class="empty-tip">暂无学员</view>
 
-    <!-- 学员列表 -->
-    <scroll-view class="student-list" scroll-y>
-      <view wx:if="{{studentList.length === 0}}" class="empty-tip">暂无学员</view>
-      <view wx:for="{{studentList}}" wx:key="id" class="student-item">
-        <view class="student-info" bindtap="showStudentDetail" data-id="{{item.id}}">
-          <image class="student-avatar" src="{{item.avatar || '/images/default-avatar.png'}}"></image>
-          <view class="student-detail">
-            <view class="student-name">{{item.name}} <text class="student-gender">{{item.gender === 'male' ? '男' : '女'}}</text></view>
-            <view class="student-meta">
-              <text>{{item.age}}岁</text>
-              <text class="dot">·</text>
-              <text>{{item.phone}}</text>
-            </view>
-            <view class="student-courses">
-              <text>{{item.courseCount}}门课程</text>
-              <text class="dot">·</text>
-              <text>{{item.attendanceRate}}出勤率</text>
-            </view>
+    <view wx:for="{{studentList}}" wx:key="id" class="student-item">
+      <view class="student-info" bindtap="showStudentDetail" data-id="{{item.id}}">
+        <view class="student-detail">
+          <view class="student-name">{{item.studentName}} <text class="student-gender">{{item.studentGender === 'MALE' ? '男' : '女'}}</text></view>
+          <view class="student-meta">
+            <text>{{item.studentAge}}岁</text>
+            <text class="dot"> · </text>
+            <text>{{item.studentPhone}}</text>
+          </view>
+          <view class="student-courses">
+            <text>{{item.courses.length}}门课程</text>
+            <text class="dot"> · </text>
+            <text>{{item.campusName}}</text>
           </view>
         </view>
-        <view class="student-actions">
-          <view class="action-btn edit" bindtap="editStudent" data-id="{{item.id}}">编辑</view>
-          <view class="action-btn delete" bindtap="deleteStudent" data-id="{{item.id}}">删除</view>
-        </view>
       </view>
-    </scroll-view>
+      <view class="student-actions">
+        <view class="action-btn edit" bindtap="editStudent" data-id="{{item.id}}">编辑</view>
+        <view class="action-btn delete" bindtap="deleteStudent" data-id="{{item.id}}">删除</view>
+      </view>
+    </view>
+
+    <!-- 加载更多提示 -->
+    <view wx:if="{{loading && studentList.length > 0}}" class="loading-more">加载中...</view>
+    <view wx:elif="{{!hasMore && studentList.length > 0}}" class="no-more">没有更多了</view>
   </view>
 
   <!-- 出勤记录标签页 -->
@@ -101,9 +97,9 @@
         </view>
         <view class="form-item">
           <text class="label">性别</text>
-          <picker mode="selector" range="{{['男', '女']}}" value="{{studentForm.genderIndex}}" bindchange="onGenderChange">
+          <picker mode="selector" range="{{genderOptions}}" value="{{studentForm.genderIndex}}" bindchange="onGenderChange">
             <view class="picker">
-              {{studentForm.gender === 'male' ? '男' : (studentForm.gender === 'female' ? '女' : '请选择性别')}}
+              {{genderOptions[studentForm.genderIndex] || '请选择性别'}}
             </view>
           </picker>
         </view>
@@ -112,21 +108,113 @@
           <input type="number" placeholder="请输入年龄" value="{{studentForm.age}}" bindinput="onStudentFormInput" data-field="age" />
         </view>
         <view class="form-item">
-          <text class="label">联系电话</text>
-          <input type="number" placeholder="请输入联系电话" value="{{studentForm.phone}}" bindinput="onStudentFormInput" data-field="phone" />
+          <text class="label">手机号</text>
+          <input type="number" placeholder="请输入手机号" value="{{studentForm.phone}}" bindinput="onStudentFormInput" data-field="phone" />
         </view>
         <view class="form-item">
-          <text class="label">家长姓名</text>
-          <input type="text" placeholder="请输入家长姓名" value="{{studentForm.parentName}}" bindinput="onStudentFormInput" data-field="parentName" />
+          <text class="label">选择课程</text>
+          <view class="picker" bindtap="showCourseSelector">
+            {{studentForm.selectedCourses.length > 0 ? studentForm.selectedCourses.length + '门课程已选择' : '请选择课程'}}
+          </view>
         </view>
-        <view class="form-item">
-          <text class="label">备注</text>
-          <textarea placeholder="请输入备注信息" value="{{studentForm.remark}}" bindinput="onStudentFormInput" data-field="remark" />
+
+        <!-- 已选课程列表 -->
+        <view wx:if="{{studentForm.selectedCourses.length > 0}}" class="selected-courses">
+          <text class="label">已选课程</text>
+          <view wx:for="{{studentForm.selectedCourses}}" wx:key="id" class="course-schedule-item">
+            <view class="course-info">
+              <view class="course-basic">
+                <text class="course-name">{{item.name}} ({{item.typeName}})</text>
+                <text class="enroll-date">报名日期：{{item.enrollDate || '未设置'}}</text>
+                <text class="schedule-info">
+                  {{item.fixedScheduleTimes && item.fixedScheduleTimes.length > 0 ? item.fixedScheduleTimes.length + '个时间段' : '无排课时间'}}
+                </text>
+              </view>
+              <view class="edit-btn" bindtap="showCourseDetailModal" data-index="{{index}}">编辑</view>
+            </view>
+          </view>
         </view>
       </view>
       <view class="modal-footer">
         <button class="btn cancel" bindtap="hideStudentModal">取消</button>
         <button class="btn confirm" bindtap="saveStudent">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程选择弹窗 -->
+  <view class="modal {{showCourseSelector ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCourseSelector"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>选择课程</text>
+        <view class="modal-close" bindtap="hideCourseSelector">×</view>
+      </view>
+      <view class="modal-body">
+        <checkbox-group bindchange="onCourseChange">
+          <view wx:for="{{courseList}}" wx:key="id" class="checkbox-item">
+            <checkbox value="{{item.id}}" checked="{{item.checked}}"/>
+            <text>{{item.name}} ({{item.typeName}})</text>
+          </view>
+        </checkbox-group>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCourseSelector">取消</button>
+        <button class="btn confirm" bindtap="hideCourseSelector">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程详情编辑弹窗 -->
+  <view class="modal {{showCourseDetailModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCourseDetailModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>编辑课程信息</text>
+        <view class="modal-close" bindtap="hideCourseDetailModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view wx:if="{{editingCourseData}}" class="course-detail-form">
+          <!-- 课程基本信息 -->
+          <view class="course-basic-info">
+            <text class="course-title">{{editingCourseData.name}} ({{editingCourseData.typeName}})</text>
+          </view>
+
+          <!-- 报名日期 -->
+          <view class="form-item">
+            <text class="label">报名日期</text>
+            <picker mode="date" value="{{editingCourseData.enrollDate}}" bindchange="onEnrollDateChange">
+              <view class="picker">{{editingCourseData.enrollDate || '请选择报名日期'}}</view>
+            </picker>
+          </view>
+
+          <!-- 排课时间 -->
+          <view class="form-item">
+            <text class="label">固定排课时间</text>
+            <view class="schedule-times">
+              <view wx:for="{{editingCourseData.fixedScheduleTimes}}" wx:key="index" class="schedule-time-item">
+                <view class="schedule-time-row">
+                  <picker mode="selector" range="{{weekdayOptions}}" value="{{item.weekday - 1}}" bindchange="onScheduleTimeChange" data-field="weekday" data-time-index="{{index}}">
+                    <view class="schedule-picker">{{weekdayOptions[item.weekday - 1]}}</view>
+                  </picker>
+                  <picker mode="time" value="{{item.from}}" bindchange="onScheduleTimeChange" data-field="from" data-time-index="{{index}}">
+                    <view class="schedule-picker">{{item.from}}</view>
+                  </picker>
+                  <text class="time-separator">-</text>
+                  <picker mode="time" value="{{item.to}}" bindchange="onScheduleTimeChange" data-field="to" data-time-index="{{index}}">
+                    <view class="schedule-picker">{{item.to}}</view>
+                  </picker>
+                  <view class="remove-btn" bindtap="removeScheduleTime" data-index="{{index}}">删除</view>
+                </view>
+              </view>
+              <view class="add-schedule-btn" bindtap="addScheduleTime">+ 添加时间段</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideCourseDetailModal">取消</button>
+        <button class="btn confirm" bindtap="saveCourseDetail">确定</button>
       </view>
     </view>
   </view>
@@ -141,40 +229,231 @@
       </view>
       <view class="modal-body">
         <view class="detail-item">
-          <text class="label">姓名</text>
-          <text class="value">{{currentStudent.name}}</text>
+          <text class="label">姓名：</text>
+          <text class="value">{{currentStudent.studentName}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">性别</text>
-          <text class="value">{{currentStudent.gender === 'male' ? '男' : '女'}}</text>
+          <text class="label">性别：</text>
+          <text class="value">{{currentStudent.studentGender === 'MALE' ? '男' : '女'}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">年龄</text>
-          <text class="value">{{currentStudent.age}}岁</text>
+          <text class="label">年龄：</text>
+          <text class="value">{{currentStudent.studentAge}}岁</text>
         </view>
         <view class="detail-item">
-          <text class="label">联系电话</text>
-          <text class="value">{{currentStudent.phone}}</text>
+          <text class="label">手机号：</text>
+          <text class="value">{{currentStudent.studentPhone}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">家长姓名</text>
-          <text class="value">{{currentStudent.parentName}}</text>
+          <text class="label">校区：</text>
+          <text class="value">{{currentStudent.campusName}}</text>
         </view>
         <view class="detail-item">
-          <text class="label">报名课程</text>
-          <text class="value">{{currentStudent.courses}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">出勤率</text>
-          <text class="value">{{currentStudent.attendanceRate}}</text>
-        </view>
-        <view class="detail-item">
-          <text class="label">备注</text>
-          <text class="value">{{currentStudent.remark}}</text>
+          <text class="label">报名课程：</text>
+          <view class="value">
+            <view wx:for="{{currentStudent.courses}}" wx:key="studentCourseId" class="course-detail-item" bindtap="showCourseInfoModal" data-course-index="{{index}}">
+              <view class="course-basic-info">
+                <text>{{item.courseName}} ({{item.courseTypeName}})</text>
+                <text class="course-status">
+                  {{item.status === 'studying' ? '学习中' :
+                    (item.status === 'waiting_payment' ? '代缴费' :
+                     (item.status === 'waiting_class' ? '待上课' :
+                      (item.status === 'COMPLETED' ? '已完成' :
+                       (item.status === 'SUSPENDED' ? '已暂停' : item.status))))}}
+                </text>
+              </view>
+              <view wx:if="{{item.enrollmentDate}}" class="course-enroll-date">
+                <text class="enroll-label">报名日期：</text>
+                <text>{{item.enrollmentDate}}</text>
+              </view>
+              <view wx:if="{{item.fixedSchedule && item.fixedSchedule.length > 0}}" class="course-schedule">
+                <text class="schedule-label">排课时间：</text>
+                <text wx:for="{{item.fixedSchedule}}" wx:key="index" wx:for-item="schedule" class="schedule-time">
+                  {{weekdayOptions[schedule.weekday - 1]}} {{schedule.from}}-{{schedule.to}}{{index < item.fixedSchedule.length - 1 ? '，' : ''}}
+                </text>
+              </view>
+              <view class="course-detail-arrow">></view>
+            </view>
+          </view>
         </view>
       </view>
       <view class="modal-footer">
         <button class="btn confirm" bindtap="hideDetailModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程详情弹窗 -->
+  <view class="modal {{showCourseInfoModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hideCourseInfoModal"></view>
+    <view class="modal-content course-info-modal">
+      <view class="modal-header">
+        <text>课程详情</text>
+        <view class="modal-close" bindtap="hideCourseInfoModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view wx:if="{{currentCourseInfo}}" class="course-info-detail">
+          <!-- 课程基本信息 -->
+          <view class="course-info-section">
+            <view class="course-info-title">{{currentCourseInfo.courseName}}</view>
+            <view class="course-info-subtitle">{{currentCourseInfo.courseTypeName}}</view>
+            <view class="course-status-badge status-{{currentCourseInfo.status}}">
+              {{currentCourseInfo.status === 'studying' ? '学习中' :
+                (currentCourseInfo.status === 'waiting_payment' ? '代缴费' :
+                 (currentCourseInfo.status === 'waiting_class' ? '待上课' :
+                  (currentCourseInfo.status === 'COMPLETED' ? '已完成' :
+                   (currentCourseInfo.status === 'SUSPENDED' ? '已暂停' : currentCourseInfo.status))))}}
+            </view>
+          </view>
+
+          <!-- 课程详细信息 -->
+          <view class="course-info-details">
+            <view class="info-row">
+              <text class="info-label">教练：</text>
+              <text class="info-value">{{currentCourseInfo.coachName || '未分配'}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">总课时：</text>
+              <text class="info-value">{{currentCourseInfo.totalHours || 0}}小时</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">剩余课时：</text>
+              <text class="info-value">{{currentCourseInfo.remainingHours || 0}}小时</text>
+            </view>
+            <view class="info-row">
+              <text class="info-label">报名日期：</text>
+              <text class="info-value">{{currentCourseInfo.enrollmentDate || '未设置'}}</text>
+            </view>
+            <view wx:if="{{currentCourseInfo.fixedSchedule && currentCourseInfo.fixedSchedule.length > 0}}" class="info-row">
+              <text class="info-label">排课时间：</text>
+              <view class="info-value">
+                <text wx:for="{{currentCourseInfo.fixedSchedule}}" wx:key="index" wx:for-item="schedule" class="schedule-tag">
+                  {{weekdayOptions[schedule.weekday - 1]}} {{schedule.from}}-{{schedule.to}}
+                </text>
+              </view>
+            </view>
+          </view>
+
+        </view>
+      </view>
+
+      <!-- 操作按钮 - 移到modal-body外面确保始终可见 -->
+      <view class="course-actions">
+        <view class="action-row">
+          <button class="action-btn primary" bindtap="showCourseRecords">课程记录</button>
+          <button class="action-btn primary" bindtap="showPaymentRecord">缴费登记</button>
+          <button class="action-btn secondary" bindtap="toggleMoreActions">
+            更多 {{showMoreActions ? '▲' : '▼'}}
+          </button>
+        </view>
+
+        <!-- 更多操作菜单 -->
+        <view wx:if="{{showMoreActions}}" class="more-actions">
+          <button class="more-action-btn" bindtap="withdrawCourse">退课</button>
+          <button class="more-action-btn" bindtap="transferCourse">转课</button>
+          <button class="more-action-btn" bindtap="changeClass">转班</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 缴费记录弹窗 -->
+  <view class="modal {{showPaymentModal ? 'show' : ''}}">
+    <view class="modal-mask" bindtap="hidePaymentModal"></view>
+    <view class="modal-content payment-modal">
+      <view class="modal-header">
+        <text>缴费登记</text>
+        <view class="modal-close" bindtap="hidePaymentModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view wx:if="{{currentCourseInfo}}" class="payment-form">
+          <!-- 课程信息 -->
+          <view class="course-info-header">
+            <text class="course-name">{{currentCourseInfo.courseName}}</text>
+            <text class="course-type">({{currentCourseInfo.courseTypeName}})</text>
+          </view>
+
+          <!-- 缴费信息 -->
+          <view class="form-section">
+            <view class="section-title">缴费信息</view>
+
+            <view class="form-item">
+              <text class="label">缴费类型</text>
+              <picker mode="selector" range="{{paymentTypeOptions}}" value="{{paymentForm.paymentTypeIndex}}" bindchange="onPaymentTypeChange">
+                <view class="picker">{{paymentTypeOptions[paymentForm.paymentTypeIndex]}}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="label">支付方式</text>
+              <picker mode="selector" range="{{paymentMethodOptions}}" value="{{paymentForm.paymentMethodIndex}}" bindchange="onPaymentMethodChange">
+                <view class="picker">{{paymentMethodOptions[paymentForm.paymentMethodIndex]}}</view>
+              </picker>
+            </view>
+
+            <view class="form-item">
+              <text class="label">缴费金额</text>
+              <input type="digit" placeholder="请输入缴费金额" value="{{paymentForm.amount}}" bindinput="onPaymentFormInput" data-field="amount" />
+            </view>
+
+            <view class="form-item">
+              <text class="label">交易日期</text>
+              <picker mode="date" value="{{paymentForm.transactionDate}}" bindchange="onPaymentFormInput" data-field="transactionDate">
+                <view class="picker">{{paymentForm.transactionDate || '请选择交易日期'}}</view>
+              </picker>
+            </view>
+          </view>
+
+          <!-- 课时信息 -->
+          <view class="form-section">
+            <view class="section-title">课时信息</view>
+
+            <view class="form-item">
+              <text class="label">正课课时</text>
+              <input type="number" placeholder="请输入正课课时" value="{{paymentForm.courseHours}}" bindinput="onPaymentFormInput" data-field="courseHours" />
+            </view>
+
+            <view class="form-item">
+              <text class="label">赠送课时</text>
+              <input type="number" placeholder="请输入赠送课时" value="{{paymentForm.giftHours}}" bindinput="onPaymentFormInput" data-field="giftHours" />
+            </view>
+
+            <view class="form-item">
+              <text class="label">有效期至</text>
+              <picker mode="date" value="{{paymentForm.validUntil}}" bindchange="onPaymentFormInput" data-field="validUntil">
+                <view class="picker">{{paymentForm.validUntil || '请选择有效期'}}</view>
+              </picker>
+            </view>
+          </view>
+
+          <!-- 赠品信息 -->
+          <view class="form-section">
+            <view class="section-title">赠品 <text class="section-hint">(可多选)</text></view>
+            <view class="gift-items">
+              <checkbox-group wx:if="{{giftItemOptions.length > 0}}" bindchange="onGiftItemsChange">
+                <view wx:for="{{giftItemOptions}}" wx:key="index" class="gift-item">
+                  <checkbox value="{{giftItemValues[index]}}"/>
+                  <text>{{item}}</text>
+                </view>
+              </checkbox-group>
+              <text wx:else class="no-gifts">暂无赠品选项</text>
+            </view>
+          </view>
+
+          <!-- 备注信息 -->
+          <view class="form-section">
+            <view class="section-title">备注信息</view>
+            <view class="form-item">
+              <textarea placeholder="请输入备注信息" value="{{paymentForm.notes}}" bindinput="onPaymentFormInput" data-field="notes" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="payment-actions">
+        <button class="btn cancel" bindtap="hidePaymentModal">取消</button>
+        <button class="btn confirm" bindtap="submitPayment">提交</button>
       </view>
     </view>
   </view>
