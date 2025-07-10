@@ -448,6 +448,48 @@ function getGiftItems() {
   });
 }
 
+/**
+ * 获取缴费记录列表
+ * @param {number} pageNum 页码
+ * @param {number} pageSize 每页大小
+ * @param {number} campusId 校区ID
+ */
+function getPaymentRecordList(pageNum = 1, pageSize = 10, campusId) {
+  if (!campusId) {
+    throw new Error('campusId is required for getPaymentRecordList');
+  }
+
+  return request({
+    url: '/payment/record/list',
+    method: 'POST',
+    data: {
+      pageNum,
+      pageSize,
+      campusId
+    },
+    needAuth: true
+  });
+}
+
+/**
+ * 获取缴费记录统计
+ * @param {number} campusId 校区ID
+ */
+function getPaymentRecordStat(campusId) {
+  if (!campusId) {
+    throw new Error('campusId is required for getPaymentRecordStat');
+  }
+
+  return request({
+    url: '/payment/record/stat',
+    method: 'POST',
+    data: {
+      campusId
+    },
+    needAuth: true
+  });
+}
+
 module.exports = {
   request,
   login,
@@ -479,5 +521,7 @@ module.exports = {
   updateStudent,
   deleteStudent,
   createStudentPayment,
-  getGiftItems
+  getGiftItems,
+  getPaymentRecordList,
+  getPaymentRecordStat
 };

@@ -2,6 +2,7 @@
 page {
   height: 100vh;
   background-color: #f7f7f7;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .page {
@@ -49,6 +50,33 @@ page {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* 统计区域 */
+.stats-container {
+  display: flex;
+  background-color: #fff;
+  padding: 30rpx;
+  margin: 20rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.stats-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stats-value {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.stats-label {
+  font-size: 24rpx;
+  color: #666;
 }
 
 /* 搜索区域 */
@@ -184,15 +212,15 @@ page {
 
 /* 缴费记录列表 */
 .payment-list {
-  flex: 1;
-  padding: 20rpx;
+  box-sizing: border-box;
 }
 
 .payment-item {
   padding: 30rpx;
+  margin: 0 20rpx 20rpx 20rpx;
   background-color: #fff;
   border-radius: 8rpx;
-  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .payment-header {
@@ -202,10 +230,55 @@ page {
   margin-bottom: 10rpx;
 }
 
-.payment-student {
+.student-name {
   font-size: 32rpx;
   font-weight: 500;
   color: #333;
+}
+
+.payment-amount-container {
+  display: flex;
+  align-items: center;
+}
+
+.payment-icon {
+  margin-right: 8rpx;
+}
+
+.pay-icon {
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32rpx;
+  height: 32rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.pay-icon.wechat {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='64 64 896 896' focusable='false' data-icon='wechat' width='1em' height='1em' fill='rgb(7, 193, 96)' aria-hidden='true'%3E%3Cpath d='M690.1 377.4c5.9 0 11.8.2 17.6.5-24.4-128.7-158.3-227.1-319.9-227.1C209 150.8 64 271.4 64 420.2c0 81.1 43.6 154.2 111.9 203.6a21.5 21.5 0 019.1 17.6c0 2.4-.5 4.6-1.1 6.9-5.5 20.3-14.2 52.8-14.6 54.3-.7 2.6-1.7 5.2-1.7 7.9 0 5.9 4.8 10.8 10.8 10.8 2.3 0 4.2-.9 6.2-2l70.9-40.9c5.3-3.1 11-5 17.2-5 3.2 0 6.4.5 9.5 1.4 33.1 9.5 68.8 14.8 105.7 14.8 6 0 11.9-.1 17.8-.4-7.1-21-10.9-43.1-10.9-66 0-135.8 132.2-245.8 295.3-245.8zm-194.3-86.5c23.8 0 43.2 19.3 43.2 43.1s-19.3 43.1-43.2 43.1c-23.8 0-43.2-19.3-43.2-43.1s19.4-43.1 43.2-43.1zm-215.9 86.2c-23.8 0-43.2-19.3-43.2-43.1s19.3-43.1 43.2-43.1 43.2 19.3 43.2 43.1-19.4 43.1-43.2 43.1zm586.8 415.6c56.9-41.2 93.2-102 93.2-169.7 0-124-120.8-224.5-269.9-224.5-149 0-269.9 100.5-269.9 224.5S540.9 847.5 690 847.5c30.8 0 60.6-4.4 88.1-12.3 2.6-.8 5.2-1.2 7.9-1.2 5.2 0 9.9 1.6 14.3 4.1l59.1 34c1.7 1 3.3 1.7 5.2 1.7a9 9 0 006.4-2.6 9 9 0 002.6-6.4c0-2.2-.9-4.4-1.4-6.6-.3-1.2-7.6-28.3-12.2-45.3-.5-1.9-.9-3.8-.9-5.7.1-5.9 3.1-11.2 7.6-14.5zM600.2 587.2c-19.9 0-36-16.1-36-35.9 0-19.8 16.1-35.9 36-35.9s36 16.1 36 35.9c0 19.8-16.2 35.9-36 35.9zm179.9 0c-19.9 0-36-16.1-36-35.9 0-19.8 16.1-35.9 36-35.9s36 16.1 36 35.9a36.08 36.08 0 01-36 35.9z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.pay-icon.alipay {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill-rule='evenodd' viewBox='64 64 896 896' focusable='false' data-icon='alipay' width='1em' height='1em' fill='rgb(22, 119, 255)' aria-hidden='true'%3E%3Cpath d='M557.2 129a6.68 6.68 0 016.72 6.65V250.2h243.8a6.74 6.74 0 016.65 6.84c.02 23.92-6.05 54.69-19.85 54.69H563.94v81.1h166.18c7.69 0 13.8 6.51 13.25 14.18l-.11 1.51c-.7 90.2-30.63 180.64-79.52 259.65l8.71 3.82c77.3 33.48 162.15 60.85 267.15 64.14a21.08 21.08 0 0120.38 22.07l-.2 3.95c-3.34 59.57-20 132.85-79.85 132.85-8.8 0-17.29-.55-25.48-1.61-78.04-9.25-156.28-57.05-236.32-110.27l-17.33-11.57-13.15-8.83a480.83 480.83 0 01-69.99 57.25 192.8 192.8 0 01-19.57 11.08c-65.51 39.18-142.21 62.6-227.42 62.62-118.2 0-204.92-77.97-206.64-175.9l-.03-2.95.03-1.7c1.66-98.12 84.77-175.18 203-176.72l3.64-.03c102.92 0 186.66 33.54 270.48 73.14l.44.38 1.7-3.47c21.27-44.14 36.44-94.95 42.74-152.06h-324.8a6.64 6.64 0 01-6.63-6.62c-.04-21.86 6-54.91 19.85-54.91h162.1v-81.1H191.92a6.71 6.71 0 01-6.64-6.85c-.01-22.61 6.06-54.68 19.86-54.68h231.4v-64.85l.02-1.99c.9-30.93 23.72-54.36 120.64-54.36M256.9 619c-74.77 0-136.53 39.93-137.88 95.6l-.02 1.26.08 3.24a92.55 92.55 0 001.58 13.64c20.26 96.5 220.16 129.71 364.34-36.59l-8.03-4.72C405.95 650.11 332.94 619 256.9 619'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.pay-icon.cash {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='64 64 896 896' focusable='false' data-icon='dollar' width='1em' height='1em' fill='rgb(250, 173, 20)' aria-hidden='true'%3E%3Cpath d='M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372zm47.7-395.2l-25.4-5.9V348.6c38 5.2 61.5 29 65.5 58.2.5 4 3.9 6.9 7.9 6.9h44.9c4.7 0 8.4-4.1 8-8.8-6.1-62.3-57.4-102.3-125.9-109.2V263c0-4.4-3.6-8-8-8h-28.1c-4.4 0-8 3.6-8 8v33c-70.8 6.9-126.2 46-126.2 119 0 67.6 49.8 100.2 102.1 112.7l24.7 6.3v142.7c-44.2-5.9-69-29.5-74.1-61.3-.6-3.8-4-6.6-7.9-6.6H363c-4.7 0-8.4 4-8 8.7 4.5 55 46.2 105.6 135.2 112.1V761c0 4.4 3.6 8 8 8h28.4c4.4 0 8-3.6 8-8.1l-.2-31.7c78.3-6.9 134.3-48.8 134.3-124-.1-69.4-44.2-100.4-109-116.4zm-68.6-16.2c-5.6-1.6-10.3-3.1-15-5-33.8-12.2-49.5-31.9-49.5-57.3 0-36.3 27.5-57 64.5-61.7v124zM534.3 677V543.3c3.1.9 5.9 1.6 8.8 2.2 47.3 14.4 63.2 34.4 63.2 65.1 0 39.1-29.4 62.6-72 66.4z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.pay-icon.credit-card {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='64 64 896 896' focusable='false' data-icon='credit-card' width='1em' height='1em' fill='rgb(114, 46, 209)' aria-hidden='true'%3E%3Cpath d='M928 160H96c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h832c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zm-792 72h752v120H136V232zm752 560H136V440h752v352zm-237-64h165c4.4 0 8-3.6 8-8v-72c0-4.4-3.6-8-8-8H651c-4.4 0-8 3.6-8 8v72c0 4.4 3.6 8 8 8z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.pay-icon.transfer {
+  color: #13c2c2;
+}
+
+.pay-icon.default {
+  color: #999;
 }
 
 .payment-amount {
@@ -214,19 +287,75 @@ page {
   color: #52c41a;
 }
 
-.payment-course {
+.course-name {
   font-size: 28rpx;
   color: #333;
-  margin-bottom: 10rpx;
+}
+
+.lesson-type {
+  font-size: 26rpx;
+  color: #666;
 }
 
 .payment-meta {
   font-size: 26rpx;
   color: #666;
+  margin-bottom: 8rpx;
+}
+
+.payment-details {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.payment-hours {
+  color: #1890ff;
+}
+
+.payment-date {
+  color: #999;
+}
+
+.payment-type {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.lesson-change {
+  color: #fa8c16;
+  font-weight: 500;
 }
 
 .dot {
   margin: 0 10rpx;
+}
+
+/* 加载状态 */
+.loading-tip, .loading-more {
+  text-align: center;
+  padding: 40rpx 20rpx;
+  font-size: 28rpx;
+  color: #999;
+  margin: 0 20rpx;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 80rpx 40rpx;
+  font-size: 28rpx;
+  color: #999;
+  margin: 0 20rpx;
+}
+
+.no-more {
+  text-align: center;
+  padding: 30rpx 20rpx;
+  font-size: 26rpx;
+  color: #999;
+  margin: 0 20rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+  margin-top: 20rpx;
 }
 
 /* 收支记录列表 */

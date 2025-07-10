@@ -1,7 +1,11 @@
+const api = require('../../utils/api.js');
+const auth = require('../../utils/auth.js');
+const campusCache = require('../../utils/campus-cache.js');
+
 Page({
   data: {
     activeTab: 'payment', // 当前激活的标签页：payment 或 finance
-    
+
     // 缴费记录相关
     paymentSearchKey: '', // 搜索关键词
     paymentMonth: '', // 当前选择的月份
@@ -10,6 +14,27 @@ Page({
     paymentList: [], // 缴费记录列表
     showPaymentDetailModal: false, // 是否显示缴费详情弹窗
     currentPayment: {}, // 当前查看详情的缴费记录
+
+    // 分页相关
+    paymentPageNum: 1,
+    paymentPageSize: 10,
+    paymentTotal: 0,
+    paymentHasMore: true,
+    paymentLoading: false,
+
+    // 统计数据
+    paymentStats: {
+      paymentCount: 0,
+      paymentTotal: 0,
+      refundCount: 0,
+      refundTotal: 0
+    },
+
+    // 当前校区
+    currentCampusId: null,
+
+    // 滚动视图高度
+    scrollViewHeight: 400,
     
     // 收支管理相关
     financeSearchKey: '', // 搜索关键词
@@ -33,10 +58,15 @@ Page({
     }
   },
   
-  onLoad() {
-    this.initData();
+  async onLoad() {
+    // 检查登录状态
+    if (!auth.checkLoginAndRedirect()) {
+      return;
+    }
+
+    await this.initData();
   },
-  
+
   onShow() {
     // 更新TabBar选中状态
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -44,29 +74,76 @@ Page({
         selected: 3 // 财务页是第四个标签，索引为3
       });
     }
-    
-    // 刷新数据
-    this.loadPaymentList();
-    if (this.data.activeTab === 'finance') {
+
+    // 只有在已经有数据的情况下才刷新（避免重复加载）
+    if (this.data.paymentList.length > 0) {
+      this.loadPaymentList(true); // 刷新数据
+    }
+    if (this.data.activeTab === 'finance' && this.data.financeList.length > 0) {
       this.loadFinanceList();
+    }
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    if (this.data.activeTab === 'payment') {
+      this.loadPaymentList(true);
+    } else {
+      this.loadFinanceList();
+    }
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.data.activeTab === 'payment' && this.data.paymentHasMore && !this.data.paymentLoading) {
+      this.loadPaymentList();
     }
   },
   
   // 初始化数据
-  initData() {
+  async initData() {
     // 设置当前月份
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     const monthStr = `${year}-${month < 10 ? '0' + month : month}`;
-    
+
     this.setData({
       paymentMonth: monthStr,
       financeMonth: monthStr
     });
-    
-    // 加载缴费记录列表
-    this.loadPaymentList();
+
+    // 获取系统信息，计算scroll-view高度
+    const systemInfo = wx.getSystemInfoSync();
+    const windowHeight = systemInfo.windowHeight;
+    const tabBarHeight = 48; // 底部tab bar高度
+    const tabsHeight = 48; // 标签页高度
+    const statsHeight = 100; // 统计区域高度
+    const searchHeight = 80; // 搜索区域高度
+    const safeAreaBottom = 20; // 安全区域
+
+    const scrollViewHeight = windowHeight - tabBarHeight - tabsHeight - statsHeight - searchHeight - safeAreaBottom;
+
+    this.setData({
+      scrollViewHeight: scrollViewHeight
+    });
+
+    // 获取当前校区
+    const currentCampus = campusCache.getCurrentCampus();
+    if (currentCampus) {
+      this.setData({
+        currentCampusId: currentCampus.id
+      });
+
+      // 加载缴费记录列表和统计
+      this.loadPaymentList();
+      this.loadPaymentStats();
+    } else {
+      wx.showToast({
+        title: '请先选择校区',
+        icon: 'none'
+      });
+    }
   },
   
   // 切换标签页
@@ -82,113 +159,157 @@ Page({
   
   // 搜索缴费记录
   onPaymentSearch(e) {
-    const paymentSearchKey = e.detail.value;
-    this.setData({ paymentSearchKey });
-    this.loadPaymentList();
+    const searchKey = e.detail.value;
+    this.setData({
+      paymentSearchKey: searchKey,
+      paymentPageNum: 1,
+      paymentList: [],
+      paymentHasMore: true
+    });
+    this.loadPaymentList(true);
   },
   
   // 缴费月份选择变化
   onPaymentMonthChange(e) {
     this.setData({
-      paymentMonth: e.detail.value
+      paymentMonth: e.detail.value,
+      paymentPageNum: 1,
+      paymentList: [],
+      paymentHasMore: true
     });
-    this.loadPaymentList();
+    this.loadPaymentList(true);
   },
-  
+
   // 缴费类型选择变化
   onPaymentTypeChange(e) {
     this.setData({
-      paymentTypeIndex: e.detail.value
+      paymentTypeIndex: e.detail.value,
+      paymentPageNum: 1,
+      paymentList: [],
+      paymentHasMore: true
     });
-    this.loadPaymentList();
+    this.loadPaymentList(true);
   },
   
   // 加载缴费记录列表
-  loadPaymentList() {
-    // 模拟从服务器获取数据
-    // 实际项目中应该调用API获取数据
-    const mockPayments = [
-      {
-        id: 1,
-        studentName: '张小明',
-        courseName: '数学基础班',
-        courseType: '小班课',
-        amount: 2000,
-        hours: 20,
-        paymentType: '学费',
-        date: '2023-11-01',
-        operator: '王老师',
-        remark: '预缴两个月学费'
-      },
-      {
-        id: 2,
-        studentName: '李小红',
-        courseName: '英语口语班',
-        courseType: '一对一',
-        amount: 3000,
-        hours: 10,
-        paymentType: '学费',
-        date: '2023-11-02',
-        operator: '李老师',
-        remark: ''
-      },
-      {
-        id: 3,
-        studentName: '王小刚',
-        courseName: '编程启蒙班',
-        courseType: '小班课',
-        amount: 500,
-        hours: 0,
-        paymentType: '教材费',
-        date: '2023-11-03',
-        operator: '张老师',
-        remark: '包含教材和练习册'
-      },
-      {
-        id: 4,
-        studentName: '赵小丽',
-        courseName: '美术兴趣班',
-        courseType: '中班课',
-        amount: 1500,
-        hours: 15,
-        paymentType: '学费',
-        date: '2023-11-05',
-        operator: '刘老师',
-        remark: ''
+  async loadPaymentList(refresh = false) {
+    if (!this.data.currentCampusId) {
+      console.log('No campus selected, skipping payment list load');
+      return;
+    }
+
+    if (refresh) {
+      this.setData({
+        paymentPageNum: 1,
+        paymentList: [],
+        paymentHasMore: true
+      });
+    }
+
+    this.setData({ paymentLoading: true });
+
+    try {
+      const response = await api.getPaymentRecordList(
+        this.data.paymentPageNum,
+        this.data.paymentPageSize,
+        this.data.currentCampusId
+      );
+      console.log('Payment record list response:', response);
+
+      if (response.code === 200) {
+        const { data } = response;
+        const newList = refresh ? data.list : [...this.data.paymentList, ...data.list];
+
+        // 处理支付方式映射
+        const processedList = newList.map(item => ({
+          ...item,
+          payTypeText: this.getPayTypeText(item.payType),
+          paymentTypeText: this.getPaymentTypeText(item.paymentType),
+          lessonChange: this.getLessonChangeText(item.lessonChange)
+        }));
+
+        const hasMore = data.list.length === this.data.paymentPageSize && newList.length < data.total;
+
+        this.setData({
+          paymentList: processedList,
+          paymentTotal: data.total,
+          paymentPageNum: this.data.paymentPageNum + 1,
+          paymentHasMore: hasMore
+        });
+      } else {
+        wx.showToast({
+          title: response.message || '获取缴费记录失败',
+          icon: 'none'
+        });
       }
-    ];
-    
-    // 根据筛选条件过滤
-    let filteredPayments = mockPayments;
-    
-    // 按月份筛选
-    if (this.data.paymentMonth) {
-      const monthPrefix = this.data.paymentMonth;
-      filteredPayments = filteredPayments.filter(item => 
-        item.date.startsWith(monthPrefix)
-      );
+    } catch (error) {
+      console.error('Load payment list error:', error);
+      wx.showToast({
+        title: '网络错误，请重试',
+        icon: 'none'
+      });
+    } finally {
+      this.setData({ paymentLoading: false });
+      // 停止下拉刷新
+      wx.stopPullDownRefresh();
     }
-    
-    // 按缴费类型筛选
-    if (this.data.paymentTypeIndex > 0) {
-      const paymentType = this.data.paymentTypeOptions[this.data.paymentTypeIndex];
-      filteredPayments = filteredPayments.filter(item => 
-        item.paymentType === paymentType
-      );
+  },
+
+  // 加载缴费统计
+  async loadPaymentStats() {
+    if (!this.data.currentCampusId) {
+      return;
     }
-    
-    // 按搜索关键词筛选
-    if (this.data.paymentSearchKey) {
-      const key = this.data.paymentSearchKey.toLowerCase();
-      filteredPayments = filteredPayments.filter(item => 
-        item.studentName.toLowerCase().includes(key) || 
-        item.courseName.toLowerCase().includes(key)
-      );
+
+    try {
+      const response = await api.getPaymentRecordStat(this.data.currentCampusId);
+      console.log('Payment stats response:', response);
+
+      if (response.code === 200) {
+        this.setData({
+          paymentStats: response.data
+        });
+      }
+    } catch (error) {
+      console.error('Load payment stats error:', error);
     }
-    
-    this.setData({
-      paymentList: filteredPayments
-    });
+  },
+
+  // 获取支付方式文本
+  getPayTypeText(payType) {
+    const payTypeMap = {
+      'WECHAT': '微信支付',
+      'ALIPAY': '支付宝',
+      'CASH': '现金',
+      'CARD': '刷卡',
+      'TRANSFER': '转账'
+    };
+    return payTypeMap[payType] || payType;
+  },
+
+  // 获取缴费类型文本
+  getPaymentTypeText(paymentType) {
+    const paymentTypeMap = {
+      'NEW': '新缴费',
+      'RENEWAL': '续费',
+      'REFUND': '退费'
+    };
+    return paymentTypeMap[paymentType] || paymentType;
+  },
+
+  // 获取课时变化文本
+  getLessonChangeText(lessonChange) {
+    if (!lessonChange) return null;
+
+    // lessonChange 可能是数字或字符串
+    const change = Number(lessonChange);
+    if (isNaN(change) || change === 0) return null;
+
+    if (change > 0) {
+      return `+${change}课时`;
+    } else {
+      return `${change}课时`;
+    }
   },
   
   // 显示缴费详情

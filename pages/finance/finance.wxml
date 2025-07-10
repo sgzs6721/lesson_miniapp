@@ -8,6 +8,26 @@
 
   <!-- 缴费记录标签页 -->
   <view class="tab-content" hidden="{{activeTab !== 'payment'}}">
+    <!-- 统计区域 -->
+    <view class="stats-container">
+      <view class="stats-item">
+        <view class="stats-value">{{paymentStats.paymentCount}}</view>
+        <view class="stats-label">缴费笔数</view>
+      </view>
+      <view class="stats-item">
+        <view class="stats-value">¥{{paymentStats.paymentTotal}}</view>
+        <view class="stats-label">缴费总额</view>
+      </view>
+      <view class="stats-item">
+        <view class="stats-value">{{paymentStats.refundCount}}</view>
+        <view class="stats-label">退费笔数</view>
+      </view>
+      <view class="stats-item">
+        <view class="stats-value">¥{{paymentStats.refundTotal}}</view>
+        <view class="stats-label">退费总额</view>
+      </view>
+    </view>
+
     <!-- 搜索区域 -->
     <view class="search-container">
       <view class="search-box">
@@ -16,41 +36,46 @@
       </view>
     </view>
 
-    <!-- 筛选条件 -->
-    <view class="filter-bar">
-      <picker mode="date" fields="month" value="{{paymentMonth}}" bindchange="onPaymentMonthChange">
-        <view class="filter-item">
-          <text>{{paymentMonth || '选择月份'}}</text>
-          <text class="arrow-down">▼</text>
-        </view>
-      </picker>
-      <picker mode="selector" range="{{paymentTypeOptions}}" value="{{paymentTypeIndex}}" bindchange="onPaymentTypeChange">
-        <view class="filter-item">
-          <text>{{paymentTypeOptions[paymentTypeIndex]}}</text>
-          <text class="arrow-down">▼</text>
-        </view>
-      </picker>
-    </view>
-
     <!-- 缴费记录列表 -->
-    <scroll-view class="payment-list" scroll-y>
-      <view wx:if="{{paymentList.length === 0}}" class="empty-tip">暂无缴费记录</view>
-      <view wx:for="{{paymentList}}" wx:key="id" class="payment-item" bindtap="showPaymentDetail" data-id="{{item.id}}">
+    <scroll-view class="payment-list" scroll-y enable-back-to-top style="height: {{scrollViewHeight}}px;">
+      <view wx:if="{{paymentLoading && paymentList.length === 0}}" class="loading-tip">加载中...</view>
+      <view wx:elif="{{paymentList.length === 0}}" class="empty-tip">暂无缴费记录</view>
+      <view wx:for="{{paymentList}}" wx:key="id" class="payment-item">
         <view class="payment-info">
           <view class="payment-header">
-            <view class="payment-student">{{item.studentName}}</view>
-            <view class="payment-amount">¥{{item.amount}}</view>
+            <view class="student-name">{{item.student}}</view>
+            <view class="payment-amount-container">
+              <view class="payment-icon">
+                <icon wx:if="{{item.payType === 'WECHAT'}}" class="pay-icon wechat"></icon>
+                <icon wx:elif="{{item.payType === 'ALIPAY'}}" class="pay-icon alipay"></icon>
+                <icon wx:elif="{{item.payType === 'CASH'}}" class="pay-icon cash"></icon>
+                <icon wx:elif="{{item.payType === 'CARD'}}" class="pay-icon credit-card"></icon>
+                <icon wx:elif="{{item.payType === 'TRANSFER'}}" class="pay-icon transfer"></icon>
+                <icon wx:else class="pay-icon default"></icon>
+              </view>
+              <view class="payment-amount">¥{{item.amount}}</view>
+            </view>
           </view>
-          <view class="payment-course">{{item.courseName}} ({{item.courseType}})</view>
           <view class="payment-meta">
+            <text class="course-name">{{item.course}}</text>
+            <text class="dot">·</text>
+            <text class="lesson-type">{{item.lessonType}}</text>
+          </view>
+          <view class="payment-details">
             <text class="payment-date">{{item.date}}</text>
             <text class="dot">·</text>
-            <text class="payment-hours">增加{{item.hours}}课时</text>
-            <text class="dot">·</text>
-            <text class="payment-type">{{item.paymentType}}</text>
+            <text class="payment-type">{{item.paymentTypeText}}</text>
+            <text class="dot" wx:if="{{item.hours > 0}}">·</text>
+            <text class="payment-hours" wx:if="{{item.hours > 0}}">{{item.hours}}课时</text>
+            <text class="dot" wx:if="{{item.lessonChange}}">·</text>
+            <text class="lesson-change" wx:if="{{item.lessonChange}}">{{item.lessonChange}}</text>
           </view>
         </view>
       </view>
+
+      <!-- 加载更多提示 -->
+      <view wx:if="{{paymentLoading && paymentList.length > 0}}" class="loading-more">加载中...</view>
+      <view wx:elif="{{!paymentHasMore && paymentList.length > 0}}" class="no-more">没有更多了</view>
     </scroll-view>
   </view>
 
